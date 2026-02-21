@@ -18,6 +18,11 @@
         RED_CARD_DURATION: 240 // 4 minutes in seconds
     };
 
+    const CARD_YELLOW = 'Yellow Card';
+    const CARD_BLUE = 'Blue Card';
+    const CARD_RED = 'Red Card';
+    const FOUL_STANDARD = 'Standard Foul';
+
     // --- PREDEFINED TEAMS ---
     const teamDatabase = {
         "Isfiya HC": { name: "Isfiya HC", color: "#3b82f6", players: ["1 - Golan (GK)", "5 - Perez", "8 - Levi", "10 - Cohen", "12 - Mizrahi"] },
@@ -100,7 +105,7 @@
         events: []
     };
 
-    let timerInterval = null;
+    let animationFrameId = null;
     let isRunning = false;
     let targetEndTime = null;
     let lastTickTime = null;
@@ -148,16 +153,6 @@
     }
 
     // --- UI UPDATES ---
-    function escapeHTML(str) {
-        return str.replace(/[&<>'"]/g, tag => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            "'": '&#39;',
-            '"': '&quot;'
-        }[tag]));
-    }
-
     function refreshUI() {
         document.getElementById('nameA').textContent = state.matchData.A.name;
         document.getElementById('nameB').textContent = state.matchData.B.name;
@@ -331,7 +326,7 @@
             state.isBreak = false;
             state.timeLeft = state.periodDuration;
             if (isRunning) {
-                clearInterval(timerInterval);
+                cancelAnimationFrame(animationFrameId);
                 isRunning = false;
             }
         }
@@ -361,8 +356,13 @@
 
                 if (diff > 0 && !state.isBreak) {
                     ['A', 'B'].forEach(team => {
-                        state.penalties[team].forEach(p => p.timeLeft -= diff);
-                        state.penalties[team] = state.penalties[team].filter(p => p.timeLeft > 0);
+                        let i = state.penalties[team].length;
+                        while (i--) {
+                            state.penalties[team][i].timeLeft -= diff;
+                            if (state.penalties[team][i].timeLeft <= 0) {
+                                state.penalties[team].splice(i, 1);
+                            }
+                        }
                     });
                 }
 
@@ -372,7 +372,7 @@
             }
         } else {
             state.timeLeft = 0;
-            clearInterval(timerInterval);
+            cancelAnimationFrame(animationFrameId);
             playBuzzer();
             if (state.isBreak) {
                 state.isBreak = false;
@@ -397,8 +397,14 @@
         isRunning = true;
         targetEndTime = Date.now() + (state.timeLeft * 1000);
         lastTickTime = Date.now();
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(timerTick, 200);
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+        const tick = () => {
+            if (!isRunning) return;
+            timerTick();
+            if (isRunning) animationFrameId = requestAnimationFrame(tick);
+        };
+        animationFrameId = requestAnimationFrame(tick);
         refreshUI();
     }
 
@@ -507,7 +513,7 @@
         saveState();
         refreshUI();
 
-        let primary = `⚽ Goal: ${scorer}`;
+        let primary = `Goal: ${scorer}`;
         let secondary = assist !== 'None' ? `Assist: ${assist}` : null;
         showAnnouncement(primary, secondary);
     }
@@ -528,9 +534,9 @@
         const eventId = Date.now();
 
         // --- PENALTY TIMER LOGIC ---
-        if (infractionType.includes('Blue')) {
+        if (infractionType === CARD_BLUE) {
             state.penalties[activeTeam].push({ id: eventId, player: foulPlayer, timeLeft: CONFIG.BLUE_CARD_DURATION, type: 'blue' });
-        } else if (infractionType.includes('Red')) {
+        } else if (infractionType === CARD_RED) {
             state.penalties[activeTeam].push({ id: eventId, player: foulPlayer, timeLeft: CONFIG.RED_CARD_DURATION, type: 'red' });
         }
 
@@ -548,8 +554,8 @@
         saveState();
         refreshUI();
 
-        if (infractionType !== 'Standard Foul') {
-            let icon = infractionType.includes('Yellow') ? '🟨' : infractionType.includes('Blue') ? '🟦' : '🟥';
+        if (infractionType !== FOUL_STANDARD) {
+            let icon = infractionType === CARD_YELLOW ? '🟨' : infractionType === CARD_BLUE ? '🟦' : '🟥';
             let primary = `${icon} ${infractionType}`;
             let secondary = foulPlayer;
             showAnnouncement(primary, secondary);
@@ -580,7 +586,7 @@
             }
 
             // Undo penalty timer if it was a card, matching the event id
-            if (lastEvent.infractionType.includes('Blue') || lastEvent.infractionType.includes('Red')) {
+            if (lastEvent.infractionType === CARD_BLUE || lastEvent.infractionType === CARD_RED) {
                 state.penalties[team] = state.penalties[team].filter(p => p.id !== lastEvent.id);
             }
             showAnnouncement(`⟲ Undid ${state.matchData[team].name} ${lastEvent.infractionType}`);
@@ -618,7 +624,7 @@
             const detailsSpan = document.createElement('span');
             if (ev.type === 'Goal') {
                 const bText = document.createElement('b');
-                bText.textContent = `⚽ ${ev.teamName} Goal: `;
+                bText.textContent = `${ev.teamName} Goal: `;
                 detailsSpan.appendChild(bText);
 
                 detailsSpan.appendChild(document.createTextNode(ev.scorer + ' '));
@@ -629,7 +635,7 @@
                 astSpan.textContent = `(Ast: ${ev.assist})`;
                 detailsSpan.appendChild(astSpan);
             } else {
-                let icon = ev.infractionType.includes('Yellow') ? '🟨' : ev.infractionType.includes('Blue') ? '🟦' : ev.infractionType.includes('Red') ? '🟥' : '🛑';
+                let icon = ev.infractionType === CARD_YELLOW ? '🟨' : ev.infractionType === CARD_BLUE ? '🟦' : ev.infractionType === CARD_RED ? '🟥' : '🛑';
 
                 const bText = document.createElement('b');
                 bText.textContent = `${icon} ${ev.teamName} ${ev.infractionType}: `;
@@ -676,7 +682,7 @@
                     state.matchData[ev.team].playerFouls[ev.player]--;
                 }
                 // Fix Log Deletion Bug: Remove penalty timer if log event matches a card
-                if (ev.infractionType.includes('Blue') || ev.infractionType.includes('Red')) {
+                if (ev.infractionType === CARD_BLUE || ev.infractionType === CARD_RED) {
                     state.penalties[ev.team] = state.penalties[ev.team].filter(p => p.id !== id);
                 }
             }
@@ -741,7 +747,8 @@
         let pressTimer;
         let isLongPress = false;
 
-        element.addEventListener('pointerdown', () => {
+        element.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
             isLongPress = false;
             pressTimer = setTimeout(() => {
                 isLongPress = true;
@@ -787,13 +794,13 @@
         document.getElementById('skipBtnPlayer').addEventListener('click', () => selectPlayer('None'));
         document.getElementById('skipBtnAssist').addEventListener('click', () => finalizeGoal(goalScorer, 'None'));
 
-        document.getElementById('btnFoulStd').addEventListener('click', () => finalizeInfraction('Standard Foul', true));
-        document.getElementById('btnCardYellow').addEventListener('click', () => finalizeInfraction('Yellow Card', false));
-        document.getElementById('btnCardYellowFoul').addEventListener('click', () => finalizeInfraction('Yellow Card', true));
-        document.getElementById('btnCardBlue').addEventListener('click', () => finalizeInfraction('Blue Card', false));
-        document.getElementById('btnCardBlueFoul').addEventListener('click', () => finalizeInfraction('Blue Card', true));
-        document.getElementById('btnCardRed').addEventListener('click', () => finalizeInfraction('Red Card', false));
-        document.getElementById('btnCardRedFoul').addEventListener('click', () => finalizeInfraction('Red Card', true));
+        document.getElementById('btnFoulStd').addEventListener('click', () => finalizeInfraction(FOUL_STANDARD, true));
+        document.getElementById('btnCardYellow').addEventListener('click', () => finalizeInfraction(CARD_YELLOW, false));
+        document.getElementById('btnCardYellowFoul').addEventListener('click', () => finalizeInfraction(CARD_YELLOW, true));
+        document.getElementById('btnCardBlue').addEventListener('click', () => finalizeInfraction(CARD_BLUE, false));
+        document.getElementById('btnCardBlueFoul').addEventListener('click', () => finalizeInfraction(CARD_BLUE, true));
+        document.getElementById('btnCardRed').addEventListener('click', () => finalizeInfraction(CARD_RED, false));
+        document.getElementById('btnCardRedFoul').addEventListener('click', () => finalizeInfraction(CARD_RED, true));
 
         document.getElementById('btnCancelAction').addEventListener('click', cancelAction);
 
@@ -801,8 +808,8 @@
         addInteraction('timerDisplay',
             () => {
                 if (isRunning) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
                     isRunning = false;
                     saveState();
                     refreshUI();
@@ -811,8 +818,8 @@
                 }
             },
             () => {
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = null;
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
                 isRunning = false;
                 state.isBreak = false;
                 state.timeLeft = state.periodDuration;
