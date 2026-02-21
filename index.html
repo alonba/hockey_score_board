@@ -121,7 +121,9 @@
         .modal-overlay {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(248, 250, 252, 0.85); z-index: 20; flex-direction: column; 
-            align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(12px);
+            align-items: center; justify-content: center; padding: 20px; 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
         .modal-content {
             background: var(--card-bg); border: 1px solid var(--border-soft); padding: 40px; 
@@ -335,6 +337,29 @@
 
     <script>
         // ==========================================
+        // WRAP IN IIFE TO PREVENT GLOBAL POLLUTION
+        // ==========================================
+        (function() {
+            'use strict';
+            
+            // ==========================================
+            // --- CONFIGURATION CONSTANTS ---
+            // ==========================================
+            const CONFIG = {
+                DEFAULT_PERIOD_MINUTES: 25,
+                DEFAULT_BREAK_MINUTES: 5,
+                DEFAULT_TIMEOUT_SECONDS: 60,
+                ANNOUNCEMENT_DURATION: 4000,
+                LONG_PRESS_DURATION: 600,
+                INITIAL_FOUL_THRESHOLD: 10,
+                FOUL_THRESHOLD_INCREMENT: 5,
+                MAX_TIME_MINUTES: 99,
+                MAX_TIME_SECONDS: 59,
+                MAX_BREAK_MINUTES: 30,
+                MIN_BREAK_MINUTES: 1
+            };
+            
+        // ==========================================
         // --- DATABASE OF PREDEFINED TEAMS ---
         // Edit this section to add all your real teams!
         // ==========================================
@@ -394,7 +419,6 @@
         }
 
         // --- STATE MANAGEMENT ---
-        const DEFAULT_TIME = 1500;
         const periods = ["1st Half", "2nd Half", "OT 1", "OT 2", "Final"];
         
         let state = {
@@ -402,63 +426,114 @@
                 A: { name: "HOME", color: "#3b82f6", players: ["1","2","3","4","5"], score: 0, fouls: 0, playerFouls: {} },
                 B: { name: "AWAY", color: "#ef4444", players: ["1","2","3","4","5"], score: 0, fouls: 0, playerFouls: {} }
             },
-            timeLeft: DEFAULT_TIME, currentPeriodIndex: 0, breakDuration: 300, isBreak: false, events: []
+            timeLeft: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
+            periodDuration: CONFIG.DEFAULT_PERIOD_MINUTES * 60, // Store period duration
+            currentPeriodIndex: 0,
+            breakDuration: CONFIG.DEFAULT_BREAK_MINUTES * 60,
+            isBreak: false,
+            isRunning: false, // Move isRunning into state
+            events: []
         };
 
-        let timerInterval = null; let isRunning = false;
-        let timeoutLeft = 60; let timeoutInterval = null; let announcementTimer = null;
-        let currentAction = null; let activeTeam = null; let goalScorer = null; let foulPlayer = null;
+        let timerInterval = null;
+        let timeoutLeft = CONFIG.DEFAULT_TIMEOUT_SECONDS;
+        let timeoutInterval = null;
+        let announcementTimer = null;
+        let currentAction = null;
+        let activeTeam = null;
+        let goalScorer = null;
+        let foulPlayer = null;
 
         // --- LOCAL STORAGE ---
         function saveState() { localStorage.setItem('rinkHockeyData', JSON.stringify(state)); }
+        
         function loadState() { 
             const saved = localStorage.getItem('rinkHockeyData'); 
-            if (saved) { 
-                state = JSON.parse(saved); 
-                if (!state.matchData.A.playerFouls) state.matchData.A.playerFouls = {};
-                if (!state.matchData.B.playerFouls) state.matchData.B.playerFouls = {};
-            } 
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                    // Backwards compatibility checks
+                    if (!state.matchData.A.playerFouls) state.matchData.A.playerFouls = {};
+                    if (!state.matchData.B.playerFouls) state.matchData.B.playerFouls = {};
+                    if (!state.periodDuration) state.periodDuration = state.timeLeft || CONFIG.DEFAULT_PERIOD_MINUTES * 60;
+                    
+                    // FIX: Always force the clock to load in a paused state for safety
+                    state.isRunning = false; 
+                    
+                } catch (error) {
+                    console.error('Failed to load saved state:', error);
+                    if (confirm('Saved game data is corrupted. Start a new game?')) {
+                        localStorage.removeItem('rinkHockeyData');
+                    }
+                }
+            }
             refreshUI(); 
         }
-        function hardReset() { if(confirm("🚨 Are you completely sure? This will delete the current score, log, and timer to start a fresh game!")) { localStorage.removeItem('rinkHockeyData'); location.reload(); } }
+        
+        function hardReset() { 
+            if(confirm("🚨 Are you completely sure? This will delete the current score, log, and timer to start a fresh game!")) { 
+                localStorage.removeItem('rinkHockeyData'); 
+                location.reload(); 
+            } 
+        }
 
-        function getNextFoulThreshold(f) { return (f < 10) ? 10 : Math.floor(f / 5) * 5 + 5; }
+        /**
+         * Calculate the next foul threshold for a team.
+         * Thresholds progress as: 10, 15, 20, 25, 30...
+         * Initial threshold is 10, then increments by 5 for each reached threshold.
+         * @param {number} f - Current foul count
+         * @returns {number} Next threshold value
+         */
+        function getNextFoulThreshold(f) { 
+            return (f < CONFIG.INITIAL_FOUL_THRESHOLD) 
+                ? CONFIG.INITIAL_FOUL_THRESHOLD 
+                : Math.floor(f / CONFIG.FOUL_THRESHOLD_INCREMENT) * CONFIG.FOUL_THRESHOLD_INCREMENT + CONFIG.FOUL_THRESHOLD_INCREMENT; 
+        }
 
         // --- UI UPDATES ---
         function refreshUI() {
-            document.getElementById('nameA').innerText = state.matchData.A.name; document.getElementById('nameB').innerText = state.matchData.B.name;
-            document.getElementById('scoreA').innerText = state.matchData.A.score; document.getElementById('scoreB').innerText = state.matchData.B.score;
-            document.getElementById('foulsA').innerText = state.matchData.A.fouls; document.getElementById('foulsB').innerText = state.matchData.B.fouls;
+            document.getElementById('nameA').textContent = state.matchData.A.name;
+            document.getElementById('nameB').textContent = state.matchData.B.name;
+            document.getElementById('scoreA').textContent = state.matchData.A.score;
+            document.getElementById('scoreB').textContent = state.matchData.B.score;
+            document.getElementById('foulsA').textContent = state.matchData.A.fouls;
+            document.getElementById('foulsB').textContent = state.matchData.B.fouls;
             
             const timerDisplay = document.getElementById('timerDisplay');
             if (state.isBreak) {
-                document.getElementById('periodDisplay').innerText = "Halftime"; timerDisplay.className = 'timer break';
+                document.getElementById('periodDisplay').textContent = "Halftime";
+                timerDisplay.className = 'timer break';
             } else {
-                document.getElementById('periodDisplay').innerText = periods[state.currentPeriodIndex]; 
-                timerDisplay.className = isRunning ? 'timer running' : 'timer paused';
+                document.getElementById('periodDisplay').textContent = periods[state.currentPeriodIndex]; 
+                timerDisplay.className = state.isRunning ? 'timer running' : 'timer paused';
             }
             
             document.getElementById('colorLineA').style.backgroundColor = state.matchData.A.color;
             document.getElementById('colorLineB').style.backgroundColor = state.matchData.B.color;
             
-            updateFoulVisuals(); updateTimerDisplay(); renderMatchLog();
+            updateFoulVisuals(); 
+            updateTimerDisplay(); 
+            renderMatchLog();
         }
 
         function updateTimerDisplay() {
-            const m = Math.floor(state.timeLeft / 60); const s = state.timeLeft % 60;
+            const m = Math.floor(state.timeLeft / 60);
+            const s = state.timeLeft % 60;
             const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            document.getElementById('timerDisplay').innerText = timeStr; return timeStr; 
+            document.getElementById('timerDisplay').textContent = timeStr;
+            return timeStr; 
         }
 
         function updateFoulVisuals() { 
             ['A', 'B'].forEach(team => { 
                 const f = state.matchData[team].fouls;
                 const max = getNextFoulThreshold(f);
-                const prevMax = max === 10 ? 0 : max - 5;
-                const progress = f - prevMax; const totalSteps = max - prevMax;
+                const prevMax = max === CONFIG.INITIAL_FOUL_THRESHOLD ? 0 : max - CONFIG.FOUL_THRESHOLD_INCREMENT;
+                const progress = f - prevMax;
+                const totalSteps = max - prevMax;
                 const percentage = (progress / totalSteps) * 100;
                 
-                document.getElementById('foulMax' + team).innerText = ` / ${max}`;
+                document.getElementById('foulMax' + team).textContent = ` / ${max}`;
                 
                 const barFill = document.getElementById('foulBar' + team);
                 const section = document.getElementById('foulSection' + team);
@@ -466,80 +541,190 @@
                 barFill.style.width = percentage + '%';
                 section.className = 'foul-section';
                 
-                if (progress === totalSteps) { section.classList.add('foul-danger'); } 
-                else if (progress === totalSteps - 1) { section.classList.add('foul-warning'); } 
-                else { barFill.style.backgroundColor = state.matchData[team].color; }
+                if (progress === totalSteps) { 
+                    section.classList.add('foul-danger'); 
+                } else if (progress === totalSteps - 1) { 
+                    section.classList.add('foul-warning'); 
+                } else { 
+                    barFill.style.backgroundColor = state.matchData[team].color; 
+                }
             }); 
         }
 
         // --- SETUP MODAL ---
         function openSetup() { 
             document.getElementById('setupModal').style.display = 'flex'; 
-            document.getElementById('inputMin').value = Math.floor(state.timeLeft / 60); document.getElementById('inputSec').value = state.timeLeft % 60;
+            document.getElementById('inputMin').value = Math.floor(state.timeLeft / 60);
+            document.getElementById('inputSec').value = state.timeLeft % 60;
             document.getElementById('inputBreakMin').value = Math.floor(state.breakDuration / 60);
-            ['A', 'B'].forEach(t => { document.getElementById('inputName'+t).value = state.matchData[t].name; document.getElementById('inputColor'+t).value = state.matchData[t].color; document.getElementById('inputPlayers'+t).value = state.matchData[t].players.join(', '); });
+            ['A', 'B'].forEach(t => {
+                document.getElementById('inputName'+t).value = state.matchData[t].name;
+                document.getElementById('inputColor'+t).value = state.matchData[t].color;
+                document.getElementById('inputPlayers'+t).value = state.matchData[t].players.join(', ');
+            });
             renderMatchLog();
         }
-        function closeSetup() { document.getElementById('setupModal').style.display = 'none'; }
         
+        function closeSetup() { 
+            document.getElementById('setupModal').style.display = 'none'; 
+        }
+        
+        /**
+         * Apply setup changes with input validation
+         */
         function applySetup() {
-            ['A', 'B'].forEach(t => { state.matchData[t].name = document.getElementById('inputName'+t).value; state.matchData[t].color = document.getElementById('inputColor'+t).value; state.matchData[t].players = document.getElementById('inputPlayers'+t).value.split(',').map(p => p.trim()).filter(p => p); });
-            let newMin = parseInt(document.getElementById('inputMin').value) || 0; let newSec = parseInt(document.getElementById('inputSec').value) || 0;
-            state.timeLeft = (newMin * 60) + newSec; let newBreakMin = parseInt(document.getElementById('inputBreakMin').value) || 5; state.breakDuration = newBreakMin * 60;
-            saveState(); refreshUI(); closeSetup();
+            // Validate and sanitize team names
+            ['A', 'B'].forEach(t => {
+                const name = document.getElementById('inputName'+t).value.trim();
+                if (!name) {
+                    alert(`Team ${t} name cannot be empty!`);
+                    return;
+                }
+                state.matchData[t].name = name;
+                state.matchData[t].color = document.getElementById('inputColor'+t).value;
+                
+                // Parse and validate players list
+                const playersInput = document.getElementById('inputPlayers'+t).value;
+                const players = playersInput.split(',').map(p => p.trim()).filter(p => p);
+                if (players.length === 0) {
+                    alert(`Team ${t} must have at least one player!`);
+                    return;
+                }
+                state.matchData[t].players = players;
+            });
+            
+            // Validate time inputs
+            let newMin = parseInt(document.getElementById('inputMin').value) || 0;
+            let newSec = parseInt(document.getElementById('inputSec').value) || 0;
+            
+            // Validation checks
+            if (newMin < 0) newMin = 0;
+            if (newMin > CONFIG.MAX_TIME_MINUTES) newMin = CONFIG.MAX_TIME_MINUTES;
+            if (newSec < 0) newSec = 0;
+            if (newSec > CONFIG.MAX_TIME_SECONDS) newSec = CONFIG.MAX_TIME_SECONDS;
+            
+            const totalSeconds = (newMin * 60) + newSec;
+            if (totalSeconds === 0) {
+                alert('Time cannot be zero!');
+                return;
+            }
+            
+            state.timeLeft = totalSeconds;
+            state.periodDuration = totalSeconds; // Store the period duration
+            
+            // Validate break duration
+            let newBreakMin = parseInt(document.getElementById('inputBreakMin').value) || CONFIG.DEFAULT_BREAK_MINUTES;
+            if (newBreakMin < CONFIG.MIN_BREAK_MINUTES) newBreakMin = CONFIG.MIN_BREAK_MINUTES;
+            if (newBreakMin > CONFIG.MAX_BREAK_MINUTES) newBreakMin = CONFIG.MAX_BREAK_MINUTES;
+            state.breakDuration = newBreakMin * 60;
+            
+            saveState();
+            refreshUI();
+            closeSetup();
         }
 
         // --- TIMER LOGIC ---
         function cyclePeriod() {
-            if (state.isBreak) { state.isBreak = false; state.timeLeft = DEFAULT_TIME; if (isRunning) { clearInterval(timerInterval); isRunning = false; } }
-            state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length; saveState(); refreshUI();
+            if (state.isBreak) {
+                state.isBreak = false;
+                state.timeLeft = state.periodDuration; // Use stored period duration
+                if (state.isRunning) {
+                    clearInterval(timerInterval);
+                    state.isRunning = false;
+                }
+            }
+            state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length;
+            saveState();
+            refreshUI();
         }
 
         function timerTick() {
-            if (state.timeLeft > 0) { state.timeLeft--; updateTimerDisplay(); saveState(); } 
-            else {
-                clearInterval(timerInterval);
-                playBuzzer(); 
-                if (state.isBreak) { state.isBreak = false; isRunning = false; state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length; state.timeLeft = DEFAULT_TIME; if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]); } 
-                else { state.isBreak = true; state.timeLeft = state.breakDuration; if (navigator.vibrate) navigator.vibrate(1000); timerInterval = setInterval(timerTick, 1000); }
-                saveState(); refreshUI();
+            if (state.timeLeft > 0) {
+                state.timeLeft--;
+                updateTimerDisplay();
+                saveState();
+            } else {
+                clearInterval(timerInterval); // Always clear interval when time is up
+                playBuzzer();
+                
+                if (state.isBreak) {
+                    // Break is over, move to next period
+                    state.isBreak = false;
+                    state.isRunning = false;
+                    state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length;
+                    state.timeLeft = state.periodDuration; // Use stored period duration
+                    if (navigator.vibrate) {
+                        navigator.vibrate([1000, 500, 1000]);
+                    }
+                } else {
+                    // Period is over, start break
+                    state.isBreak = true;
+                    state.timeLeft = state.breakDuration;
+                    if (navigator.vibrate) {
+                        navigator.vibrate(1000);
+                    }
+                    // Automatically start break timer
+                    timerInterval = setInterval(timerTick, 1000);
+                }
+                
+                saveState();
+                refreshUI();
             }
         }
 
         // --- UNIFIED ACTION MODAL (GOALS & FOULS/CARDS) ---
         function initiateAction(type, team) {
-            currentAction = type; activeTeam = team; goalScorer = null; foulPlayer = null;
+            currentAction = type;
+            activeTeam = team;
+            goalScorer = null;
+            foulPlayer = null;
             
-            document.getElementById('actionModalTitle').innerText = type === 'goal' ? `Who scored?` : `Who committed the foul?`;
-            document.getElementById('actionModalTitle').style.color = type === 'goal' ? "var(--text-main)" : "var(--accent-red)";
+            const titleEl = document.getElementById('actionModalTitle');
+            titleEl.textContent = type === 'goal' ? `Who scored?` : `Who committed the foul?`;
+            titleEl.style.color = type === 'goal' ? "var(--text-main)" : "var(--accent-red)";
             
             document.getElementById('playerGrid').style.display = 'grid';
             document.getElementById('foulTypeGrid').style.display = 'none';
             document.getElementById('skipBtnPlayer').style.display = type === 'foul' ? 'block' : 'none';
             document.getElementById('skipBtnAssist').style.display = 'none';
             
-            const grid = document.getElementById('playerGrid'); grid.innerHTML = '';
+            const grid = document.getElementById('playerGrid');
+            grid.innerHTML = '';
             state.matchData[team].players.forEach(p => { 
-                const btn = document.createElement('button'); btn.className = 'btn-player'; 
-                let fText = (type === 'foul' && state.matchData[team].playerFouls[p]) ? `<br><span style="font-size: 1.5vh; color: var(--accent-red);">(${state.matchData[team].playerFouls[p]} fouls)</span>` : "";
-                btn.innerHTML = p + fText;
-                btn.style.borderBottom = `3px solid ${state.matchData[team].color}`; 
-                btn.onclick = () => selectPlayer(p); 
-                grid.appendChild(btn); 
+                const btn = document.createElement('button');
+                btn.className = 'btn-player';
+                btn.textContent = p; // Use textContent instead of innerHTML to prevent XSS
+                
+                // Add foul count display safely
+                if (type === 'foul' && state.matchData[team].playerFouls[p]) {
+                    const foulSpan = document.createElement('span');
+                    foulSpan.style.fontSize = '1.5vh';
+                    foulSpan.style.color = 'var(--accent-red)';
+                    foulSpan.style.display = 'block';
+                    foulSpan.textContent = `(${state.matchData[team].playerFouls[p]} fouls)`;
+                    btn.appendChild(document.createElement('br'));
+                    btn.appendChild(foulSpan);
+                }
+                
+                btn.style.borderBottom = `3px solid ${state.matchData[team].color}`;
+                btn.onclick = () => selectPlayer(p);
+                grid.appendChild(btn);
             });
             document.getElementById('actionModal').style.display = 'flex';
         }
 
         function selectPlayer(p) {
             if (currentAction === 'goal') { 
-                if (!goalScorer) { 
-                    goalScorer = p; 
-                    document.getElementById('actionModalTitle').innerText = `Assist by?`; 
-                    document.getElementById('skipBtnAssist').style.display = 'block'; 
-                } else { finalizeGoal(goalScorer, p); } 
-            } else { 
+                if (!goalScorer) {
+                    goalScorer = p;
+                    document.getElementById('actionModalTitle').textContent = `Assist by?`;
+                    document.getElementById('skipBtnAssist').style.display = 'block';
+                } else {
+                    finalizeGoal(goalScorer, p);
+                }
+            } else {
                 foulPlayer = p;
-                document.getElementById('actionModalTitle').innerText = `Select Infraction`;
+                document.getElementById('actionModalTitle').textContent = `Select Infraction`;
                 document.getElementById('playerGrid').style.display = 'none';
                 document.getElementById('skipBtnPlayer').style.display = 'none';
                 document.getElementById('foulTypeGrid').style.display = 'grid';
@@ -547,10 +732,13 @@
         }
 
         function showAnnouncement(htmlContent) {
-            clearTimeout(announcementTimer); const ann = document.getElementById('announcement');
-            document.getElementById('annText').innerHTML = htmlContent;
+            clearTimeout(announcementTimer);
+            const ann = document.getElementById('announcement');
+            document.getElementById('annText').innerHTML = htmlContent; // Safe here as content is controlled
             ann.style.display = 'block';
-            announcementTimer = setTimeout(() => { ann.style.display = 'none'; }, 4000); 
+            announcementTimer = setTimeout(() => {
+                ann.style.display = 'none';
+            }, CONFIG.ANNOUNCEMENT_DURATION);
         }
 
         function finalizeGoal(scorer, assist) {
@@ -641,25 +829,153 @@
         function downloadJSON() { const exportData = { dateExported: new Date().toISOString(), teams: state.matchData, finalScore: `${state.matchData.A.name} ${state.matchData.A.score} - ${state.matchData.B.score} ${state.matchData.B.name}`, matchEvents: state.events }; const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `rink_hockey_match_${new Date().toISOString().slice(0,10)}.json`); document.body.appendChild(dlAnchorElem); dlAnchorElem.click(); dlAnchorElem.remove(); }
 
         // --- TIMEOUT ---
-        function openTimeout() { if (isRunning) { clearInterval(timerInterval); isRunning = false; refreshUI(); } timeoutLeft = 60; document.getElementById('timeoutDisplay').innerText = timeoutLeft; document.getElementById('timeoutModal').style.display = 'flex'; timeoutInterval = setInterval(() => { if(timeoutLeft > 0) { timeoutLeft--; document.getElementById('timeoutDisplay').innerText = timeoutLeft; } else { clearInterval(timeoutInterval); document.getElementById('timeoutDisplay').innerText = "00"; playBuzzer(); if (navigator.vibrate) navigator.vibrate([500, 200, 500]); } }, 1000); }
-        function closeTimeout() { clearInterval(timeoutInterval); document.getElementById('timeoutModal').style.display = 'none'; }
+        function openTimeout() {
+            if (state.isRunning) {
+                clearInterval(timerInterval);
+                state.isRunning = false;
+                saveState();
+                refreshUI();
+            }
+            
+            timeoutLeft = CONFIG.DEFAULT_TIMEOUT_SECONDS;
+            document.getElementById('timeoutDisplay').textContent = timeoutLeft;
+            document.getElementById('timeoutModal').style.display = 'flex';
+            
+            // Clear any existing timeout interval
+            if (timeoutInterval) {
+                clearInterval(timeoutInterval);
+            }
+            
+            timeoutInterval = setInterval(() => {
+                if(timeoutLeft > 0) {
+                    timeoutLeft--;
+                    document.getElementById('timeoutDisplay').textContent = timeoutLeft;
+                } else {
+                    clearInterval(timeoutInterval);
+                    document.getElementById('timeoutDisplay').textContent = "00";
+                    playBuzzer();
+                    if (navigator.vibrate) {
+                        navigator.vibrate([500, 200, 500]);
+                    }
+                }
+            }, 1000);
+        }
+        
+        function closeTimeout() {
+            if (timeoutInterval) {
+                clearInterval(timeoutInterval);
+                timeoutInterval = null;
+            }
+            document.getElementById('timeoutModal').style.display = 'none';
+        }
 
         // --- INTERACTION HANDLERS ---
         function addInteraction(elementId, onShortTap, onLongPress) {
-            const element = document.getElementById(elementId); let pressTimer; let isLongPress = false;
-            element.addEventListener('pointerdown', () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; onLongPress(); if (navigator.vibrate) navigator.vibrate(50); }, 600); });
-            element.addEventListener('pointerup', () => { clearTimeout(pressTimer); if (!isLongPress) onShortTap(); });
+            const element = document.getElementById(elementId);
+            let pressTimer;
+            let isLongPress = false;
+            
+            element.addEventListener('pointerdown', () => {
+                isLongPress = false;
+                pressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    onLongPress();
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }, CONFIG.LONG_PRESS_DURATION);
+            });
+            
+            element.addEventListener('pointerup', () => {
+                clearTimeout(pressTimer);
+                if (!isLongPress) {
+                    onShortTap();
+                }
+            });
+            
             element.addEventListener('pointerleave', () => clearTimeout(pressTimer));
         }
 
-        addInteraction('timerDisplay', () => { if (isRunning) { clearInterval(timerInterval); isRunning = false; saveState(); refreshUI(); } else { if (!state.isBreak && state.timeLeft === DEFAULT_TIME) { playBuzzer(); } isRunning = true; saveState(); refreshUI(); timerInterval = setInterval(timerTick, 1000); } }, () => { clearInterval(timerInterval); isRunning = false; state.isBreak = false; state.timeLeft = DEFAULT_TIME; saveState(); refreshUI(); } );
+        // Timer display interaction - toggle play/pause or reset
+        addInteraction('timerDisplay',
+            // Short tap: Toggle timer
+            () => {
+                if (state.isRunning) {
+                    // Pause timer
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    state.isRunning = false;
+                    saveState();
+                    refreshUI();
+                } else {
+                    // Start timer
+                    if (!state.isBreak && state.timeLeft === state.periodDuration) {
+                        playBuzzer();
+                    }
+                    state.isRunning = true;
+                    saveState();
+                    refreshUI();
+                    // Clear any existing interval before starting new one
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                    }
+                    timerInterval = setInterval(timerTick, 1000);
+                }
+            },
+            // Long press: Reset timer
+            () => {
+                // Stop timer completely
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                state.isRunning = false;
+                state.isBreak = false;
+                state.timeLeft = state.periodDuration;
+                saveState();
+                refreshUI();
+            }
+        );
+        
         addInteraction('scoreA', () => initiateAction('goal', 'A'), () => undoLastAction());
         addInteraction('scoreB', () => initiateAction('goal', 'B'), () => undoLastAction());
         addInteraction('foulSectionA', () => initiateAction('foul', 'A'), () => undoLastAction());
         addInteraction('foulSectionB', () => initiateAction('foul', 'B'), () => undoLastAction());
 
         // --- STARTUP ---
-        loadState(); 
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', function() {
+            // Populate team preset dropdowns
+            const selectA = document.getElementById('presetA');
+            const selectB = document.getElementById('presetB');
+            for (const teamKey in teamDatabase) {
+                selectA.add(new Option(teamKey, teamKey));
+                selectB.add(new Option(teamKey, teamKey));
+            }
+            
+            // Load saved state or initialize
+            loadState();
+        });
+
+        // Make functions available globally for onclick handlers in HTML
+        window.openSetup = openSetup;
+        window.closeSetup = closeSetup;
+        window.applySetup = applySetup;
+        window.cyclePeriod = cyclePeriod;
+        window.undoLastAction = undoLastAction;
+        window.openTimeout = openTimeout;
+        window.closeTimeout = closeTimeout;
+        window.loadPreset = loadPreset;
+        window.selectPlayer = selectPlayer;
+        window.finalizeGoal = finalizeGoal;
+        window.finalizeInfraction = finalizeInfraction;
+        window.cancelAction = cancelAction;
+        window.hideAnnouncement = hideAnnouncement;
+        window.deleteEvent = deleteEvent;
+        window.downloadJSON = downloadJSON;
+        window.hardReset = hardReset;
+        
+        })(); // End of IIFE
 
     </script>
 </body>
