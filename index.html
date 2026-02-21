@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sleek Rink Hockey Scoreboard</title>
+    <style>
+        /* --- SLEEK, LIGHT, MODERN CSS --- */
+        :root {
+            --bg-base: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-soft: #e2e8f0;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-blue: #3b82f6;
+            --shadow-soft: 0 20px 40px -15px rgba(15, 23, 42, 0.05);
+            --shadow-float: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden; touch-action: none;
+        }
+
+        /* --- TOP CONTROL BAR --- */
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 30px 50px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        }
+        
+        .pill-btn {
+            background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-soft); 
+            padding: 14px 28px; font-size: 1.8vh; font-weight: 600; cursor: pointer; 
+            border-radius: 50px; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); letter-spacing: 0.5px;
+        }
+        .pill-btn:active { transform: scale(0.97); background: #f1f5f9; }
+        
+        /* Circular Icon Buttons */
+        .icon-btn {
+            padding: 0; width: 6vh; height: 6vh; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+        }
+        .icon-btn svg { width: 2.8vh; height: 2.8vh; }
+
+        .btn-timeout { color: #d97706; background: #fffbeb; border-color: #fde68a; }
+        .btn-undo { color: var(--text-muted); }
+        .btn-undo:hover { color: var(--text-main); border-color: var(--text-muted); }
+        
+        .period-display { 
+            position: absolute; left: 50%; transform: translateX(-50%); 
+            background: transparent; padding: 10px 30px; border-radius: 50px;
+            font-size: 2.2vh; font-weight: 700; color: var(--text-muted); 
+            cursor: pointer; letter-spacing: 2px; text-transform: uppercase; transition: color 0.2s;
+        }
+        .period-display:hover { color: var(--text-main); }
+
+        /* --- TIMER --- */
+        .timer-container {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%); text-align: center; z-index: 5;
+        }
+        .timer { 
+            font-size: 15vh; font-weight: 800; cursor: pointer; 
+            font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -3px; transition: color 0.3s ease;
+        }
+        .timer.running { color: var(--text-main); }
+        .timer.paused { color: var(--text-muted); }
+        .timer.break { color: var(--accent-yellow); }
+
+        /* --- SCOREBOARD LAYOUT --- */
+        .scoreboard { 
+            display: flex; flex: 1; width: 100%; margin-top: 25vh; padding: 0 50px 50px 50px; gap: 50px;
+        }
+        
+        .team-card { 
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            background: var(--card-bg); border-radius: 40px; position: relative;
+            border: 1px solid rgba(255,255,255,0.8); padding: 50px 30px;
+            box-shadow: var(--shadow-soft); transition: transform 0.2s ease;
+        }
+        
+        .team-header { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .team-color-line { width: 80px; height: 8px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .team-name { font-size: 5vh; color: var(--text-main); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.1;}
+        
+        .score { 
+            font-size: 30vh; font-weight: 800; line-height: 0.8; cursor: pointer; 
+            font-variant-numeric: tabular-nums; letter-spacing: -6px; color: var(--text-main); margin: 20px 0;
+        }
+        
+        /* --- DYNAMIC FOUL TRACKER --- */
+        .foul-section { 
+            width: 85%; background: var(--bg-base); border-radius: 20px; 
+            padding: 20px 25px; cursor: pointer; border: 1px solid var(--border-soft); transition: background 0.2s;
+        }
+        .foul-section:hover { background: #f1f5f9; }
+        
+        .foul-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+        .foul-title { font-size: 1.8vh; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .foul-numbers { font-size: 4vh; font-weight: 800; color: var(--text-main); line-height: 1; font-variant-numeric: tabular-nums; }
+        .foul-threshold { font-size: 2vh; color: var(--text-muted); font-weight: 600; }
+        
+        .foul-bar-bg { width: 100%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .foul-bar-fill { height: 100%; border-radius: 10px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s; }
+        
+        .foul-warning .foul-numbers { color: var(--accent-yellow); }
+        .foul-warning .foul-bar-fill { background-color: var(--accent-yellow) !important; }
+        .foul-warning { background: #fffbeb; border-color: #fde68a; }
+        
+        .foul-danger .foul-numbers { color: var(--accent-red); }
+        .foul-danger .foul-bar-fill { background-color: var(--accent-red) !important; animation: pulseSleek 1.5s infinite; }
+        .foul-danger { background: #fef2f2; border-color: #fecaca; }
+
+        @keyframes pulseSleek { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* --- MODALS & MENUS --- */
+        .modal-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(248, 250, 252, 0.85); z-index: 20; flex-direction: column; 
+            align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(12px);
+        }
+        .modal-content {
+            background: var(--card-bg); border: 1px solid var(--border-soft); padding: 40px; 
+            border-radius: 32px; width: 95%; max-width: 900px; text-align: center; 
+            max-height: 95vh; overflow-y: auto; box-shadow: var(--shadow-float);
+        }
+        .modal-title { font-size: 3.5vh; margin-bottom: 25px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+        
+        .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 1.5vh; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .form-group input, .form-group select { 
+            width: 100%; padding: 14px 18px; font-size: 1.8vh; background: var(--bg-base); color: var(--text-main); 
+            border: 1px solid var(--border-soft); border-radius: 12px; font-family: inherit; font-weight: 600; 
+            outline: none; transition: border 0.2s; 
+        }
+        .form-group select { cursor: pointer; appearance: auto; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--text-muted); }
+        .form-group input[type="color"] { height: 50px; padding: 4px; cursor: pointer; }
+        
+        .preset-container { background: #f1f5f9; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px dashed #cbd5e1;}
+        
+        .time-settings { display: flex; gap: 30px; justify-content: center; margin-bottom: 30px; background: var(--bg-base); padding: 20px; border-radius: 20px; border: 1px solid var(--border-soft); }
+        .time-inputs { display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .time-inputs input { width: 80px; text-align: center; font-size: 2.5vh; font-weight: 700; background: var(--card-bg); }
+        
+        .btn-row { display: flex; gap: 15px; margin-top: 30px; }
+        .btn-primary { flex: 2; background: var(--text-main); color: var(--card-bg); font-size: 1.8vh; font-weight: 600; padding: 18px; border: none; border-radius: 16px; cursor: pointer; transition: opacity 0.2s; }
+        .btn-secondary { flex: 1; background: var(--bg-base); color: var(--text-main); border: 1px solid var(--border-soft); font-size: 1.8vh; font-weight: 600; padding: 18px; border-radius: 16px; cursor: pointer; transition: background 0.2s; }
+        .btn-danger { background: #fff1f2; color: var(--accent-red); border: 1px solid #ffe4e6; margin-top: 15px; width: 100%; font-size: 1.8vh; font-weight: 600; padding: 16px; border-radius: 16px; cursor: pointer; }
+        .btn-info { background: #f0f9ff; color: #0284c7; border: 1px solid #e0f2fe; margin-top: 15px; width: 100%; font-size: 1.8vh; font-weight: 600; padding: 16px; border-radius: 16px; cursor: pointer; }
+
+        /* --- CARDS & FOULS GRID --- */
+        .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-bottom: 25px; max-height: 50vh; overflow-y: auto;}
+        .foul-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        
+        .btn-player { background: var(--bg-base); color: var(--text-main); border: 1px solid var(--border-soft); padding: 20px 10px; font-size: 2vh; font-weight: 700; cursor: pointer; border-radius: 16px; transition: all 0.2s; }
+        .btn-player:active { background: #e2e8f0; transform: scale(0.97); }
+        
+        .btn-card { padding: 18px; font-size: 1.8vh; font-weight: 700; border-radius: 12px; border: 2px solid transparent; cursor: pointer; transition: transform 0.1s; }
+        .btn-card:active { transform: scale(0.97); }
+        .btn-card.std { grid-column: 1 / -1; background: var(--bg-base); border-color: var(--border-soft); color: var(--text-main); margin-bottom: 10px; font-size: 2vh;}
+        .btn-card.y { background: #fffbeb; border-color: #fde68a; color: #d97706; }
+        .btn-card.y-f { background: var(--accent-yellow); color: #fff; }
+        .btn-card.b { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+        .btn-card.b-f { background: var(--accent-blue); color: #fff; }
+        .btn-card.r { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+        .btn-card.r-f { background: var(--accent-red); color: #fff; }
+
+        /* --- MATCH LOG --- */
+        .match-log { background: var(--bg-base); border: 1px solid var(--border-soft); padding: 20px; border-radius: 20px; margin-top: 20px; text-align: left; max-height: 250px; overflow-y: auto; }
+        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-soft); font-size: 1.8vh; color: var(--text-main); }
+        .log-item:last-child { border-bottom: none; }
+        .btn-del { background: transparent; border: none; color: var(--text-muted); font-size: 2.2vh; cursor: pointer; padding: 5px 10px; transition: color 0.2s; }
+        .btn-del:hover { color: var(--accent-red); }
+        
+        /* --- EXTRAS --- */
+        .announcement { display: none; position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); background: var(--text-main); color: var(--card-bg); padding: 25px 60px; font-size: 3vh; font-weight: 800; border-radius: 100px; box-shadow: var(--shadow-float); z-index: 100; text-align: center; cursor: pointer; letter-spacing: -0.5px; line-height: 1.2;}
+        .timeout-clock { font-size: 18vh; color: var(--accent-yellow); font-weight: 800; margin: 20px 0; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -4px; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="pill-btn icon-btn" onclick="openSetup()" title="Match Settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+        
+        <div class="period-display" id="periodDisplay" onclick="cyclePeriod()">1st Half</div>
+        
+        <div style="display: flex; gap: 15px;">
+            <button class="pill-btn btn-undo icon-btn" onclick="undoLastAction()" title="Undo Action">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+            </button>
+            <button class="pill-btn btn-timeout icon-btn" onclick="openTimeout()" title="Timeout">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="timer-container">
+        <div class="timer paused" id="timerDisplay">25:00</div>
+    </div>
+
+    <div class="scoreboard">
+        <div class="team-card" id="cardA">
+            <div class="team-header">
+                <div class="team-color-line" id="colorLineA"></div>
+                <div class="team-name" id="nameA">HOME</div>
+            </div>
+            <div class="score" id="scoreA">0</div>
+            
+            <div class="foul-section" id="foulSectionA">
+                <div class="foul-header">
+                    <div class="foul-title">Team Fouls</div>
+                    <div><span class="foul-numbers" id="foulsA">0</span><span class="foul-threshold" id="foulMaxA"> / 10</span></div>
+                </div>
+                <div class="foul-bar-bg"><div class="foul-bar-fill" id="foulBarA" style="width: 0%;"></div></div>
+            </div>
+        </div>
+        
+        <div class="team-card" id="cardB">
+            <div class="team-header">
+                <div class="team-color-line" id="colorLineB"></div>
+                <div class="team-name" id="nameB">AWAY</div>
+            </div>
+            <div class="score" id="scoreB">0</div>
+            
+            <div class="foul-section" id="foulSectionB">
+                <div class="foul-header">
+                    <div class="foul-title">Team Fouls</div>
+                    <div><span class="foul-numbers" id="foulsB">0</span><span class="foul-threshold" id="foulMaxB"> / 10</span></div>
+                </div>
+                <div class="foul-bar-bg"><div class="foul-bar-fill" id="foulBarB" style="width: 0%;"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="announcement" class="announcement" onclick="hideAnnouncement()">
+        <div id="annText">ACTION</div>
+    </div>
+
+    <div id="timeoutModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" style="color: var(--accent-yellow);">Timeout Active</div>
+            <div class="timeout-clock" id="timeoutDisplay">60</div>
+            <button class="btn-primary" onclick="closeTimeout()" style="width: 100%;">Resume Game</button>
+        </div>
+    </div>
+
+    <div id="setupModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">Match Settings</div>
+            
+            <div class="time-settings">
+                <div class="form-group" style="margin:0;"><label style="text-align: center;">Main Clock</label><div class="time-inputs"><input type="number" id="inputMin" value="25" min="0" max="99"><span style="font-size: 2.5vh; font-weight: 700; color: var(--text-muted);">:</span><input type="number" id="inputSec" value="00" min="0" max="59"></div></div>
+                <div style="width: 1px; background: var(--border-soft); margin: 0 10px;"></div>
+                <div class="form-group" style="margin:0;"><label style="text-align: center;">Halftime (Min)</label><div class="time-inputs"><input type="number" id="inputBreakMin" value="5" min="1" max="30"></div></div>
+            </div>
+            
+            <div class="setup-grid">
+                <div>
+                    <h3 style="margin-bottom:15px; color:var(--text-main); font-size: 1.8vh; text-transform: uppercase; letter-spacing: 1px;">Team 1 (Left)</h3>
+                    
+                    <div class="preset-container">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Load Preset Team</label>
+                            <select id="presetA" onchange="loadPreset('A')">
+                                <option value="">-- Custom Team --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group"><label>Name</label><input type="text" id="inputNameA"></div>
+                    <div class="form-group"><label>Color</label><input type="color" id="inputColorA"></div>
+                    <div class="form-group"><label>Players (comma separated)</label><input type="text" id="inputPlayersA"></div>
+                </div>
+                
+                <div>
+                    <h3 style="margin-bottom:15px; color:var(--text-main); font-size: 1.8vh; text-transform: uppercase; letter-spacing: 1px;">Team 2 (Right)</h3>
+                    
+                    <div class="preset-container">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Load Preset Team</label>
+                            <select id="presetB" onchange="loadPreset('B')">
+                                <option value="">-- Custom Team --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group"><label>Name</label><input type="text" id="inputNameB"></div>
+                    <div class="form-group"><label>Color</label><input type="color" id="inputColorB"></div>
+                    <div class="form-group"><label>Players (comma separated)</label><input type="text" id="inputPlayersB"></div>
+                </div>
+            </div>
+            
+            <div class="btn-row">
+                <button class="btn-secondary" onclick="closeSetup()">Cancel</button>
+                <button class="btn-primary" onclick="applySetup()">Apply Changes</button>
+            </div>
+            
+            <h3 style="margin: 40px 0 15px 0; color:var(--text-main); text-align: left; font-size: 1.8vh; text-transform: uppercase; letter-spacing: 1px;">Game Log & Export</h3>
+            <div class="match-log" id="matchLogDisplay"></div>
+            <button class="btn-info" onclick="downloadJSON()">Download Match Data (.json)</button>
+            <button class="btn-danger" onclick="hardReset()">Reset Entire Game</button>
+        </div>
+    </div>
+
+    <div id="actionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title" id="actionModalTitle">Select Player</div>
+            
+            <div id="playerGrid" class="player-grid"></div>
+            <button id="skipBtnPlayer" class="btn-secondary" style="width:100%; margin-bottom: 15px; display:none;" onclick="selectPlayer('None')">Team Foul (No Player)</button>
+            <button id="skipBtnAssist" class="btn-secondary" style="width:100%; margin-bottom: 15px; display:none;" onclick="finalizeGoal(goalScorer, 'None')">No Assist</button>
+            
+            <div id="foulTypeGrid" class="foul-type-grid" style="display:none;">
+                <button class="btn-card std" onclick="finalizeInfraction('Standard Foul', true)">Standard Foul (+1 Team Foul)</button>
+                <button class="btn-card y" onclick="finalizeInfraction('Yellow Card', false)">🟨 Yellow (No Foul)</button>
+                <button class="btn-card y-f" onclick="finalizeInfraction('Yellow Card', true)">🟨 Yellow (+1 Foul)</button>
+                <button class="btn-card b" onclick="finalizeInfraction('Blue Card', false)">🟦 Blue (No Foul)</button>
+                <button class="btn-card b-f" onclick="finalizeInfraction('Blue Card', true)">🟦 Blue (+1 Foul)</button>
+                <button class="btn-card r" onclick="finalizeInfraction('Red Card', false)">🟥 Red (No Foul)</button>
+                <button class="btn-card r-f" onclick="finalizeInfraction('Red Card', true)">🟥 Red (+1 Foul)</button>
+            </div>
+
+            <button class="btn-danger" style="margin-top:0;" onclick="cancelAction()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // --- DATABASE OF PREDEFINED TEAMS ---
+        // Edit this section to add all your real teams!
+        // ==========================================
+        const teamDatabase = {
+            "Isfiya HC": { name: "Isfiya HC", color: "#3b82f6", players: ["1 - Golan (GK)", "5 - Perez", "8 - Levi", "10 - Cohen", "12 - Mizrahi"] },
+            "Haifa Rollers": { name: "Haifa Rollers", color: "#ef4444", players: ["3 - Katz", "7 - Avraham", "9 - Ben David", "11 - Friedman", "99 - Dahan (GK)"] },
+            "Tel Aviv Strikers": { name: "Tel Aviv Strikers", color: "#eab308", players: ["0 - Vardi (GK)", "4 - Ronen", "6 - Shapira", "14 - Golan", "88 - Carmel"] },
+            "Jerusalem Kings": { name: "Jerusalem Kings", color: "#8b5cf6", players: ["2 - Cohen", "5 - Levi", "10 - Sabag", "13 - Malka", "33 - Tal (GK)"] }
+        };
+
+        // Populate dropdowns on load
+        window.onload = function() {
+            const selectA = document.getElementById('presetA');
+            const selectB = document.getElementById('presetB');
+            for (const teamKey in teamDatabase) {
+                selectA.add(new Option(teamKey, teamKey));
+                selectB.add(new Option(teamKey, teamKey));
+            }
+        };
+
+        function loadPreset(side) {
+            const selectEl = document.getElementById('preset' + side);
+            const teamKey = selectEl.value;
+            if (teamKey && teamDatabase[teamKey]) {
+                const team = teamDatabase[teamKey];
+                document.getElementById('inputName' + side).value = team.name;
+                document.getElementById('inputColor' + side).value = team.color;
+                document.getElementById('inputPlayers' + side).value = team.players.join(', ');
+            }
+        }
+
+        // --- SYNTHETIC ARENA BUZZER ---
+        let audioCtx;
+        function playBuzzer() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const now = audioCtx.currentTime;
+            const duration = 1.5; 
+            const masterGain = audioCtx.createGain();
+            masterGain.connect(audioCtx.destination);
+            
+            masterGain.gain.setValueAtTime(0, now);
+            masterGain.gain.linearRampToValueAtTime(1, now + 0.05);
+            masterGain.gain.setValueAtTime(1, now + duration - 0.1);
+            masterGain.gain.linearRampToValueAtTime(0, now + duration);
+
+            const frequencies = [110, 116, 146, 150]; 
+            frequencies.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now);
+                osc.connect(masterGain);
+                osc.start(now);
+                osc.stop(now + duration);
+            });
+        }
+
+        // --- STATE MANAGEMENT ---
+        const DEFAULT_TIME = 1500;
+        const periods = ["1st Half", "2nd Half", "OT 1", "OT 2", "Final"];
+        
+        let state = {
+            matchData: {
+                A: { name: "HOME", color: "#3b82f6", players: ["1","2","3","4","5"], score: 0, fouls: 0, playerFouls: {} },
+                B: { name: "AWAY", color: "#ef4444", players: ["1","2","3","4","5"], score: 0, fouls: 0, playerFouls: {} }
+            },
+            timeLeft: DEFAULT_TIME, currentPeriodIndex: 0, breakDuration: 300, isBreak: false, events: []
+        };
+
+        let timerInterval = null; let isRunning = false;
+        let timeoutLeft = 60; let timeoutInterval = null; let announcementTimer = null;
+        let currentAction = null; let activeTeam = null; let goalScorer = null; let foulPlayer = null;
+
+        // --- LOCAL STORAGE ---
+        function saveState() { localStorage.setItem('rinkHockeyData', JSON.stringify(state)); }
+        function loadState() { 
+            const saved = localStorage.getItem('rinkHockeyData'); 
+            if (saved) { 
+                state = JSON.parse(saved); 
+                if (!state.matchData.A.playerFouls) state.matchData.A.playerFouls = {};
+                if (!state.matchData.B.playerFouls) state.matchData.B.playerFouls = {};
+            } 
+            refreshUI(); 
+        }
+        function hardReset() { if(confirm("🚨 Are you completely sure? This will delete the current score, log, and timer to start a fresh game!")) { localStorage.removeItem('rinkHockeyData'); location.reload(); } }
+
+        function getNextFoulThreshold(f) { return (f < 10) ? 10 : Math.floor(f / 5) * 5 + 5; }
+
+        // --- UI UPDATES ---
+        function refreshUI() {
+            document.getElementById('nameA').innerText = state.matchData.A.name; document.getElementById('nameB').innerText = state.matchData.B.name;
+            document.getElementById('scoreA').innerText = state.matchData.A.score; document.getElementById('scoreB').innerText = state.matchData.B.score;
+            document.getElementById('foulsA').innerText = state.matchData.A.fouls; document.getElementById('foulsB').innerText = state.matchData.B.fouls;
+            
+            const timerDisplay = document.getElementById('timerDisplay');
+            if (state.isBreak) {
+                document.getElementById('periodDisplay').innerText = "Halftime"; timerDisplay.className = 'timer break';
+            } else {
+                document.getElementById('periodDisplay').innerText = periods[state.currentPeriodIndex]; 
+                timerDisplay.className = isRunning ? 'timer running' : 'timer paused';
+            }
+            
+            document.getElementById('colorLineA').style.backgroundColor = state.matchData.A.color;
+            document.getElementById('colorLineB').style.backgroundColor = state.matchData.B.color;
+            
+            updateFoulVisuals(); updateTimerDisplay(); renderMatchLog();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(state.timeLeft / 60); const s = state.timeLeft % 60;
+            const timeStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            document.getElementById('timerDisplay').innerText = timeStr; return timeStr; 
+        }
+
+        function updateFoulVisuals() { 
+            ['A', 'B'].forEach(team => { 
+                const f = state.matchData[team].fouls;
+                const max = getNextFoulThreshold(f);
+                const prevMax = max === 10 ? 0 : max - 5;
+                const progress = f - prevMax; const totalSteps = max - prevMax;
+                const percentage = (progress / totalSteps) * 100;
+                
+                document.getElementById('foulMax' + team).innerText = ` / ${max}`;
+                
+                const barFill = document.getElementById('foulBar' + team);
+                const section = document.getElementById('foulSection' + team);
+                
+                barFill.style.width = percentage + '%';
+                section.className = 'foul-section';
+                
+                if (progress === totalSteps) { section.classList.add('foul-danger'); } 
+                else if (progress === totalSteps - 1) { section.classList.add('foul-warning'); } 
+                else { barFill.style.backgroundColor = state.matchData[team].color; }
+            }); 
+        }
+
+        // --- SETUP MODAL ---
+        function openSetup() { 
+            document.getElementById('setupModal').style.display = 'flex'; 
+            document.getElementById('inputMin').value = Math.floor(state.timeLeft / 60); document.getElementById('inputSec').value = state.timeLeft % 60;
+            document.getElementById('inputBreakMin').value = Math.floor(state.breakDuration / 60);
+            ['A', 'B'].forEach(t => { document.getElementById('inputName'+t).value = state.matchData[t].name; document.getElementById('inputColor'+t).value = state.matchData[t].color; document.getElementById('inputPlayers'+t).value = state.matchData[t].players.join(', '); });
+            renderMatchLog();
+        }
+        function closeSetup() { document.getElementById('setupModal').style.display = 'none'; }
+        
+        function applySetup() {
+            ['A', 'B'].forEach(t => { state.matchData[t].name = document.getElementById('inputName'+t).value; state.matchData[t].color = document.getElementById('inputColor'+t).value; state.matchData[t].players = document.getElementById('inputPlayers'+t).value.split(',').map(p => p.trim()).filter(p => p); });
+            let newMin = parseInt(document.getElementById('inputMin').value) || 0; let newSec = parseInt(document.getElementById('inputSec').value) || 0;
+            state.timeLeft = (newMin * 60) + newSec; let newBreakMin = parseInt(document.getElementById('inputBreakMin').value) || 5; state.breakDuration = newBreakMin * 60;
+            saveState(); refreshUI(); closeSetup();
+        }
+
+        // --- TIMER LOGIC ---
+        function cyclePeriod() {
+            if (state.isBreak) { state.isBreak = false; state.timeLeft = DEFAULT_TIME; if (isRunning) { clearInterval(timerInterval); isRunning = false; } }
+            state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length; saveState(); refreshUI();
+        }
+
+        function timerTick() {
+            if (state.timeLeft > 0) { state.timeLeft--; updateTimerDisplay(); saveState(); } 
+            else {
+                clearInterval(timerInterval);
+                playBuzzer(); 
+                if (state.isBreak) { state.isBreak = false; isRunning = false; state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length; state.timeLeft = DEFAULT_TIME; if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]); } 
+                else { state.isBreak = true; state.timeLeft = state.breakDuration; if (navigator.vibrate) navigator.vibrate(1000); timerInterval = setInterval(timerTick, 1000); }
+                saveState(); refreshUI();
+            }
+        }
+
+        // --- UNIFIED ACTION MODAL (GOALS & FOULS/CARDS) ---
+        function initiateAction(type, team) {
+            currentAction = type; activeTeam = team; goalScorer = null; foulPlayer = null;
+            
+            document.getElementById('actionModalTitle').innerText = type === 'goal' ? `Who scored?` : `Who committed the foul?`;
+            document.getElementById('actionModalTitle').style.color = type === 'goal' ? "var(--text-main)" : "var(--accent-red)";
+            
+            document.getElementById('playerGrid').style.display = 'grid';
+            document.getElementById('foulTypeGrid').style.display = 'none';
+            document.getElementById('skipBtnPlayer').style.display = type === 'foul' ? 'block' : 'none';
+            document.getElementById('skipBtnAssist').style.display = 'none';
+            
+            const grid = document.getElementById('playerGrid'); grid.innerHTML = '';
+            state.matchData[team].players.forEach(p => { 
+                const btn = document.createElement('button'); btn.className = 'btn-player'; 
+                let fText = (type === 'foul' && state.matchData[team].playerFouls[p]) ? `<br><span style="font-size: 1.5vh; color: var(--accent-red);">(${state.matchData[team].playerFouls[p]} fouls)</span>` : "";
+                btn.innerHTML = p + fText;
+                btn.style.borderBottom = `3px solid ${state.matchData[team].color}`; 
+                btn.onclick = () => selectPlayer(p); 
+                grid.appendChild(btn); 
+            });
+            document.getElementById('actionModal').style.display = 'flex';
+        }
+
+        function selectPlayer(p) {
+            if (currentAction === 'goal') { 
+                if (!goalScorer) { 
+                    goalScorer = p; 
+                    document.getElementById('actionModalTitle').innerText = `Assist by?`; 
+                    document.getElementById('skipBtnAssist').style.display = 'block'; 
+                } else { finalizeGoal(goalScorer, p); } 
+            } else { 
+                foulPlayer = p;
+                document.getElementById('actionModalTitle').innerText = `Select Infraction`;
+                document.getElementById('playerGrid').style.display = 'none';
+                document.getElementById('skipBtnPlayer').style.display = 'none';
+                document.getElementById('foulTypeGrid').style.display = 'grid';
+            }
+        }
+
+        function showAnnouncement(htmlContent) {
+            clearTimeout(announcementTimer); const ann = document.getElementById('announcement');
+            document.getElementById('annText').innerHTML = htmlContent;
+            ann.style.display = 'block';
+            announcementTimer = setTimeout(() => { ann.style.display = 'none'; }, 4000); 
+        }
+
+        function finalizeGoal(scorer, assist) {
+            document.getElementById('actionModal').style.display = 'none'; state.matchData[activeTeam].score++;
+            state.events.push({ id: Date.now(), type: 'Goal', team: activeTeam, teamName: state.matchData[activeTeam].name, scorer: scorer, assist: assist, time: updateTimerDisplay(), period: state.isBreak ? "Halftime" : periods[state.currentPeriodIndex] });
+            saveState(); refreshUI();
+            
+            let text = `⚽ Goal: ${scorer}`; if (assist !== 'None') text += `<br><span style="font-size:2.5vh; color:#94a3b8; font-weight: 500;">Assist: ${assist}</span>`;
+            showAnnouncement(text);
+        }
+
+        function finalizeInfraction(infractionType, countsAsTeamFoul) {
+            document.getElementById('actionModal').style.display = 'none'; 
+            
+            if (countsAsTeamFoul) { state.matchData[activeTeam].fouls++; }
+            if (foulPlayer !== 'None') { if (!state.matchData[activeTeam].playerFouls[foulPlayer]) state.matchData[activeTeam].playerFouls[foulPlayer] = 0; state.matchData[activeTeam].playerFouls[foulPlayer]++; }
+            
+            state.events.push({ id: Date.now(), type: 'Infraction', infractionType: infractionType, isFoul: countsAsTeamFoul, team: activeTeam, teamName: state.matchData[activeTeam].name, player: foulPlayer, time: updateTimerDisplay(), period: state.isBreak ? "Halftime" : periods[state.currentPeriodIndex] });
+            saveState(); refreshUI();
+            
+            if (infractionType !== 'Standard Foul') {
+                let icon = infractionType.includes('Yellow') ? '🟨' : infractionType.includes('Blue') ? '🟦' : '🟥';
+                showAnnouncement(`${icon} ${infractionType}<br><span style="font-size:2.5vh; color:#94a3b8; font-weight: 500;">${foulPlayer}</span>`);
+            }
+        }
+
+        function cancelAction() { document.getElementById('actionModal').style.display = 'none'; }
+        function hideAnnouncement() { document.getElementById('announcement').style.display = 'none'; }
+
+        // --- UNDO ACTION ---
+        function undoLastAction() {
+            if (state.events.length === 0) {
+                showAnnouncement("Nothing to undo.");
+                return;
+            }
+            
+            const lastEvent = state.events.pop();
+            const team = lastEvent.team;
+
+            if (lastEvent.type === 'Goal') {
+                state.matchData[team].score = Math.max(0, state.matchData[team].score - 1);
+                showAnnouncement(`⟲ Undid ${state.matchData[team].name} Goal`);
+            } else if (lastEvent.type === 'Infraction') {
+                if (lastEvent.isFoul) { state.matchData[team].fouls = Math.max(0, state.matchData[team].fouls - 1); }
+                if (lastEvent.player !== 'None' && state.matchData[team].playerFouls[lastEvent.player] > 0) {
+                    state.matchData[team].playerFouls[lastEvent.player]--;
+                }
+                showAnnouncement(`⟲ Undid ${state.matchData[team].name} ${lastEvent.infractionType}`);
+            }
+
+            saveState(); refreshUI();
+        }
+
+        // --- MATCH LOG UI ---
+        function renderMatchLog() {
+            const container = document.getElementById('matchLogDisplay'); container.innerHTML = '';
+            if (state.events.length === 0) { container.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding: 20px;">No events recorded yet.</div>'; return; }
+            [...state.events].reverse().forEach(ev => {
+                const div = document.createElement('div'); div.className = 'log-item';
+                let content = "";
+                if (ev.type === 'Goal') {
+                    content = `⚽ <b>${ev.teamName} Goal:</b> ${ev.scorer} <span style="color:var(--text-muted); font-size:1.5vh;">(Ast: ${ev.assist})</span>`;
+                } else {
+                    let icon = ev.infractionType.includes('Yellow') ? '🟨' : ev.infractionType.includes('Blue') ? '🟦' : ev.infractionType.includes('Red') ? '🟥' : '🛑';
+                    let foulTag = ev.isFoul ? ` <span style="color:var(--accent-red); font-size:1.5vh;">(+1 Foul)</span>` : ` <span style="color:var(--text-muted); font-size:1.5vh;">(No Foul)</span>`;
+                    content = `${icon} <b>${ev.teamName} ${ev.infractionType}:</b> ${ev.player}${foulTag}`;
+                }
+                div.innerHTML = `<div><span style="color:var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 10px;">[${ev.time}]</span> ${content}</div><button class="btn-del" onclick="deleteEvent(${ev.id})">✖</button>`;
+                container.appendChild(div);
+            });
+        }
+        
+        function deleteEvent(id) { 
+            const index = state.events.findIndex(e => e.id === id); 
+            if (index > -1) { 
+                const ev = state.events[index]; 
+                if (ev.type === 'Goal') { 
+                    state.matchData[ev.team].score = Math.max(0, state.matchData[ev.team].score - 1); 
+                } else if (ev.type === 'Infraction') { 
+                    if (ev.isFoul) state.matchData[ev.team].fouls = Math.max(0, state.matchData[ev.team].fouls - 1); 
+                    if (ev.player !== 'None' && state.matchData[ev.team].playerFouls[ev.player] > 0) state.matchData[ev.team].playerFouls[ev.player]--; 
+                } 
+                state.events.splice(index, 1); saveState(); refreshUI(); 
+            } 
+        }
+
+        // --- JSON DOWNLOAD ---
+        function downloadJSON() { const exportData = { dateExported: new Date().toISOString(), teams: state.matchData, finalScore: `${state.matchData.A.name} ${state.matchData.A.score} - ${state.matchData.B.score} ${state.matchData.B.name}`, matchEvents: state.events }; const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `rink_hockey_match_${new Date().toISOString().slice(0,10)}.json`); document.body.appendChild(dlAnchorElem); dlAnchorElem.click(); dlAnchorElem.remove(); }
+
+        // --- TIMEOUT ---
+        function openTimeout() { if (isRunning) { clearInterval(timerInterval); isRunning = false; refreshUI(); } timeoutLeft = 60; document.getElementById('timeoutDisplay').innerText = timeoutLeft; document.getElementById('timeoutModal').style.display = 'flex'; timeoutInterval = setInterval(() => { if(timeoutLeft > 0) { timeoutLeft--; document.getElementById('timeoutDisplay').innerText = timeoutLeft; } else { clearInterval(timeoutInterval); document.getElementById('timeoutDisplay').innerText = "00"; playBuzzer(); if (navigator.vibrate) navigator.vibrate([500, 200, 500]); } }, 1000); }
+        function closeTimeout() { clearInterval(timeoutInterval); document.getElementById('timeoutModal').style.display = 'none'; }
+
+        // --- INTERACTION HANDLERS ---
+        function addInteraction(elementId, onShortTap, onLongPress) {
+            const element = document.getElementById(elementId); let pressTimer; let isLongPress = false;
+            element.addEventListener('pointerdown', () => { isLongPress = false; pressTimer = setTimeout(() => { isLongPress = true; onLongPress(); if (navigator.vibrate) navigator.vibrate(50); }, 600); });
+            element.addEventListener('pointerup', () => { clearTimeout(pressTimer); if (!isLongPress) onShortTap(); });
+            element.addEventListener('pointerleave', () => clearTimeout(pressTimer));
+        }
+
+        addInteraction('timerDisplay', () => { if (isRunning) { clearInterval(timerInterval); isRunning = false; saveState(); refreshUI(); } else { if (!state.isBreak && state.timeLeft === DEFAULT_TIME) { playBuzzer(); } isRunning = true; saveState(); refreshUI(); timerInterval = setInterval(timerTick, 1000); } }, () => { clearInterval(timerInterval); isRunning = false; state.isBreak = false; state.timeLeft = DEFAULT_TIME; saveState(); refreshUI(); } );
+        addInteraction('scoreA', () => initiateAction('goal', 'A'), () => undoLastAction());
+        addInteraction('scoreB', () => initiateAction('goal', 'B'), () => undoLastAction());
+        addInteraction('foulSectionA', () => initiateAction('foul', 'A'), () => undoLastAction());
+        addInteraction('foulSectionB', () => initiateAction('foul', 'B'), () => undoLastAction());
+
+        // --- STARTUP ---
+        loadState(); 
+
+    </script>
+</body>
+</html>
