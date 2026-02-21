@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Sleek Rink Hockey Scoreboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -23,7 +23,7 @@
 
         <div class="period-display" id="periodDisplay">1st Half</div>
 
-        <div style="display: flex; gap: 15px;">
+        <div class="toolbar-actions">
             <button id="btnUndo" class="pill-btn btn-undo icon-btn" title="Undo Action">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -95,9 +95,9 @@
 
     <div id="timeoutModal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-title" style="color: var(--accent-yellow);">Timeout</div>
+            <div class="modal-title timeout-title">Timeout</div>
             <div class="timeout-clock" id="timeoutDisplay">60</div>
-            <button id="btnCloseTimeout" class="btn-primary" style="width: 100%;">Resume Game</button>
+            <button id="btnCloseTimeout" class="btn-primary w-100">Resume Game</button>
         </div>
     </div>
 
@@ -106,17 +106,17 @@
             <div class="modal-title">Match Settings</div>
 
             <div class="time-settings">
-                <div class="form-group" style="margin:0;"><label style="text-align: center;">Main Clock</label>
+                <div class="form-group mb-0"><label class="text-center">Main Clock</label>
                     <div class="time-inputs"><input type="number" id="inputMin" value="25" min="0" max="99"><span
-                            style="font-size: 2.5vh; font-weight: 700; color: var(--text-muted);">:</span><input
-                            type="number" id="inputSec" value="00" min="0" max="59"></div>
+                            class="time-separator">:</span><input type="number" id="inputSec" value="00" min="0"
+                            max="59"></div>
                 </div>
-                <div style="width: 1px; background: var(--border-soft); margin: 0 10px;"></div>
-                <div class="form-group" style="margin:0;"><label style="text-align: center;">Halftime (Min)</label>
+                <div class="divider-vertical"></div>
+                <div class="form-group mb-0"><label class="text-center">Halftime (Min)</label>
                     <div class="time-inputs"><input type="number" id="inputBreakMin" value="5" min="1" max="30"></div>
                 </div>
-                <div style="width: 1px; background: var(--border-soft); margin: 0 10px;"></div>
-                <div class="form-group" style="margin:0;"><label style="text-align: center;">Timeout (Sec)</label>
+                <div class="divider-vertical"></div>
+                <div class="form-group mb-0"><label class="text-center">Timeout (Sec)</label>
                     <div class="time-inputs"><input type="number" id="inputTimeoutSec" value="60" min="1" max="999">
                     </div>
                 </div>
@@ -124,11 +124,9 @@
 
             <div class="setup-grid">
                 <div>
-                    <h3
-                        style="margin-bottom:15px; color:var(--text-main); font-size: clamp(1rem, 1.8vh, 1.2rem); text-transform: uppercase; letter-spacing: 1px;">
-                        Team 1 (Left)</h3>
+                    <h3 class="setup-section-title">Team 1 (Left)</h3>
                     <div class="preset-container">
-                        <div class="form-group" style="margin-bottom: 0;">
+                        <div class="form-group mb-0">
                             <label>Load Preset Team</label>
                             <select id="presetA">
                                 <option value="">-- Custom Team --</option>
@@ -142,11 +140,9 @@
                 </div>
 
                 <div>
-                    <h3
-                        style="margin-bottom:15px; color:var(--text-main); font-size: clamp(1rem, 1.8vh, 1.2rem); text-transform: uppercase; letter-spacing: 1px;">
-                        Team 2 (Right)</h3>
+                    <h3 class="setup-section-title">Team 2 (Right)</h3>
                     <div class="preset-container">
-                        <div class="form-group" style="margin-bottom: 0;">
+                        <div class="form-group mb-0">
                             <label>Load Preset Team</label>
                             <select id="presetB">
                                 <option value="">-- Custom Team --</option>
@@ -165,9 +161,7 @@
                 <button id="btnApplySetup" class="btn-primary">Apply Changes</button>
             </div>
 
-            <h3
-                style="margin: 40px 0 15px 0; color:var(--text-main); text-align: left; font-size: clamp(1rem, 1.8vh, 1.2rem); text-transform: uppercase; letter-spacing: 1px;">
-                Game Log & Export</h3>
+            <h3 class="setup-section-title log-title">Game Log & Export</h3>
             <div class="match-log" id="matchLogDisplay"></div>
             <button id="btnDownloadJson" class="btn-info">Download Match Data (.json)</button>
             <button id="btnHardReset" class="btn-danger">Reset Entire Game</button>
@@ -178,10 +172,9 @@
         <div class="modal-content">
             <div class="modal-title" id="actionModalTitle">Select Player</div>
             <div id="playerGrid" class="player-grid"></div>
-            <button id="skipBtnPlayer" class="btn-secondary" style="width:100%; margin-bottom: 15px; display:none;">Team
-                Foul (No Player)</button>
-            <button id="skipBtnAssist" class="btn-secondary" style="width:100%; margin-bottom: 15px; display:none;">No
-                Assist</button>
+            <button id="skipBtnPlayer" class="btn-secondary w-100 mb-15" style="display:none;">Team Foul (No
+                Player)</button>
+            <button id="skipBtnAssist" class="btn-secondary w-100 mb-15" style="display:none;">No Assist</button>
 
             <div id="foulTypeGrid" class="foul-type-grid" style="display:none;">
                 <button id="btnFoulStd" class="btn-card std">Standard Foul (+1 Team Foul)</button>
@@ -192,7 +185,7 @@
                 <button id="btnCardRed" class="btn-card r">🟥 Red (No Foul)</button>
                 <button id="btnCardRedFoul" class="btn-card r-f">🟥 Red (+1 Foul)</button>
             </div>
-            <button id="btnCancelAction" class="btn-danger" style="margin-top:0;">Cancel</button>
+            <button id="btnCancelAction" class="btn-danger mt-0">Cancel</button>
         </div>
     </div>
 
