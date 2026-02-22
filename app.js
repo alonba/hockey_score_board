@@ -133,16 +133,15 @@
                 if (!state.periodDuration) state.periodDuration = state.timeLeft || CONFIG.DEFAULT_PERIOD_MINUTES * 60;
                 if (!state.timeoutDuration) state.timeoutDuration = CONFIG.DEFAULT_TIMEOUT_SECONDS;
             } catch (error) {
-                if (confirm('Saved game data is corrupted. Start a new game?')) {
-                    localStorage.removeItem('rinkHockeyData');
-                }
+                console.error("Saved game data corrupted", error);
+                localStorage.removeItem('rinkHockeyData');
             }
         }
         refreshUI();
     }
 
-    function hardReset() {
-        if (confirm("🚨 Are you completely sure? This will delete the current score, log, and timer to start a fresh game!")) {
+    async function hardReset() {
+        if (await showConfirm("🚨 Are you completely sure? This will delete the current score, log, and timer to start a fresh game!")) {
             localStorage.removeItem('rinkHockeyData');
             location.reload();
         }
@@ -237,8 +236,8 @@
                 pill.appendChild(timeSpan);
 
                 // Tap to dismiss early
-                pill.addEventListener('click', () => {
-                    if (confirm(`Cancel penalty for ${p.player} early?`)) {
+                pill.addEventListener('click', async () => {
+                    if (await showConfirm(`Cancel penalty for ${p.player} early?`)) {
                         state.penalties[team] = state.penalties[team].filter(pen => pen.id !== p.id);
                         saveState();
                         refreshUI();
@@ -247,6 +246,31 @@
 
                 container.appendChild(pill);
             });
+        });
+    }
+
+    // --- CUSTOM CONFIRM MODAL ---
+    function showConfirm(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            document.getElementById('confirmModalTitle').textContent = message;
+
+            const btnOk = document.getElementById('btnConfirmOk');
+            const btnCancel = document.getElementById('btnConfirmCancel');
+
+            const cleanup = () => {
+                btnOk.removeEventListener('click', onOk);
+                btnCancel.removeEventListener('click', onCancel);
+                modal.style.display = 'none';
+            };
+
+            const onOk = () => { cleanup(); resolve(true); };
+            const onCancel = () => { cleanup(); resolve(false); };
+
+            btnOk.addEventListener('click', onOk);
+            btnCancel.addEventListener('click', onCancel);
+
+            modal.style.display = 'flex';
         });
     }
 
