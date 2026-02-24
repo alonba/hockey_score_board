@@ -34,8 +34,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((cachedResponse) => {
+        const fetchedResponse = fetch(event.request).then((networkResponse) => {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+
+        // Return the cached response immediately if there is one, and fall back to network if not. 
+        // We still fetch from the network in the background to update the cache for next time.
+        return cachedResponse || fetchedResponse;
+      });
     })
   );
 });

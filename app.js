@@ -126,12 +126,36 @@
         const saved = localStorage.getItem('rinkHockeyData');
         if (saved) {
             try {
-                state = JSON.parse(saved);
-                if (!state.matchData.A.playerFouls) state.matchData.A.playerFouls = {};
-                if (!state.matchData.B.playerFouls) state.matchData.B.playerFouls = {};
-                if (!state.penalties) state.penalties = { A: [], B: [] };
-                if (!state.periodDuration) state.periodDuration = state.timeLeft || CONFIG.DEFAULT_PERIOD_MINUTES * 60;
-                if (!state.timeoutDuration) state.timeoutDuration = CONFIG.DEFAULT_TIMEOUT_SECONDS;
+                const parsed = JSON.parse(saved);
+                
+                // Deep merge helper
+                const defaultState = {
+                    matchData: {
+                        A: { name: "HOME", color: "#3b82f6", players: ["1", "2", "3", "4", "5"], score: 0, fouls: 0, playerFouls: {} },
+                        B: { name: "AWAY", color: "#ef4444", players: ["1", "2", "3", "4", "5"], score: 0, fouls: 0, playerFouls: {} }
+                    },
+                    penalties: { A: [], B: [] },
+                    timeLeft: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
+                    periodDuration: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
+                    currentPeriodIndex: 0,
+                    breakDuration: CONFIG.DEFAULT_BREAK_MINUTES * 60,
+                    timeoutDuration: CONFIG.DEFAULT_TIMEOUT_SECONDS,
+                    isBreak: false,
+                    events: []
+                };
+
+                state = {
+                    ...defaultState,
+                    ...parsed,
+                    matchData: {
+                        A: { ...defaultState.matchData.A, ...(parsed.matchData?.A || {}) },
+                        B: { ...defaultState.matchData.B, ...(parsed.matchData?.B || {}) }
+                    },
+                    penalties: parsed.penalties || defaultState.penalties,
+                    periodDuration: parsed.periodDuration || parsed.timeLeft || defaultState.periodDuration,
+                    timeoutDuration: parsed.timeoutDuration || defaultState.timeoutDuration
+                };
+
             } catch (error) {
                 console.error("Saved game data corrupted", error);
                 localStorage.removeItem('rinkHockeyData');
@@ -338,6 +362,18 @@
         if (newTimeoutSec < 1) newTimeoutSec = 1;
         if (newTimeoutSec > 999) newTimeoutSec = 999;
         state.timeoutDuration = newTimeoutSec;
+
+        // Unlock iOS audio context on direct user tap
+        initAudio();
+        if (audioCtx && audioCtx.state === 'running') {
+             const osc = audioCtx.createOscillator();
+             const gain = audioCtx.createGain();
+             gain.gain.value = 0; // Silent oscillator
+             osc.connect(gain);
+             gain.connect(audioCtx.destination);
+             osc.start(audioCtx.currentTime);
+             osc.stop(audioCtx.currentTime + 0.01);
+        }
 
         saveState();
         refreshUI();

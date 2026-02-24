@@ -1,6 +1,7 @@
 {
   "name": "Rink Hockey Scoreboard",
   "short_name": "Scoreboard",
+  "description": "A feature-rich progressive web application for tracking Rink Hockey matches.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",

@@ -25,7 +25,7 @@ body {
     background-color: var(--bg-base);
     color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -52,7 +52,7 @@ body {
     color: var(--text-main);
     border: 1px solid var(--border-soft);
     padding: 14px 28px;
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     font-weight: 600;
     cursor: pointer;
     border-radius: 50px;
@@ -68,8 +68,8 @@ body {
 
 .icon-btn {
     padding: 0;
-    width: clamp(2.5rem, 6vh, 4rem);
-    height: clamp(2.5rem, 6vh, 4rem);
+    width: clamp(2.5rem, 6dvh, 4rem);
+    height: clamp(2.5rem, 6dvh, 4rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -77,8 +77,8 @@ body {
 }
 
 .icon-btn svg {
-    width: clamp(1.2rem, 2.8vh, 2rem);
-    height: clamp(1.2rem, 2.8vh, 2rem);
+    width: clamp(1.2rem, 2.8dvh, 2rem);
+    height: clamp(1.2rem, 2.8dvh, 2rem);
     pointer-events: none;
 }
 
@@ -104,7 +104,7 @@ body {
     background: transparent;
     padding: 10px 30px;
     border-radius: 50px;
-    font-size: clamp(1rem, 2.2vh, 1.5rem);
+    font-size: clamp(1rem, 2.2dvh, 1.5rem);
     font-weight: 700;
     color: var(--text-muted);
     cursor: pointer;
@@ -128,7 +128,7 @@ body {
 }
 
 .timer {
-    font-size: clamp(4rem, 15vh, 12rem);
+    font-size: clamp(4rem, 15dvh, 12rem);
     font-weight: 800;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
@@ -154,7 +154,7 @@ body {
     display: flex;
     flex: 1;
     width: 100%;
-    margin-top: 25vh;
+    margin-top: 25dvh;
     padding: 0 50px 50px 50px;
     gap: 50px;
 }
@@ -189,7 +189,7 @@ body {
 }
 
 .team-name {
-    font-size: clamp(2rem, 5vh, 4rem);
+    font-size: clamp(2rem, 5dvh, 4rem);
     color: var(--text-main);
     font-weight: 800;
     letter-spacing: 1px;
@@ -206,7 +206,7 @@ body {
 }
 
 .score {
-    font-size: clamp(8rem, 30vh, 20rem);
+    font-size: clamp(8rem, 30dvh, 20rem);
     font-weight: 800;
     line-height: 0.8;
     cursor: pointer;
@@ -223,7 +223,7 @@ body {
     gap: 10px;
     justify-content: center;
     width: 100%;
-    min-height: clamp(1.5rem, 4vh, 2.5rem);
+    min-height: clamp(1.5rem, 4dvh, 2.5rem);
     margin-bottom: 20px;
 }
 
@@ -232,7 +232,7 @@ body {
     color: #fff;
     padding: 6px 12px;
     border-radius: 10px;
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -277,7 +277,7 @@ body {
 }
 
 .foul-title {
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
@@ -285,7 +285,7 @@ body {
 }
 
 .foul-numbers {
-    font-size: clamp(1.5rem, 4vh, 3rem);
+    font-size: clamp(1.5rem, 4dvh, 3rem);
     font-weight: 800;
     color: var(--text-main);
     line-height: 1;
@@ -293,7 +293,7 @@ body {
 }
 
 .foul-threshold {
-    font-size: clamp(0.9rem, 2vh, 1.3rem);
+    font-size: clamp(0.9rem, 2dvh, 1.3rem);
     color: var(--text-muted);
     font-weight: 600;
 }
@@ -379,13 +379,13 @@ body {
     width: 95%;
     max-width: 900px;
     text-align: center;
-    max-height: 95vh;
+    max-height: 95dvh;
     overflow-y: auto;
     box-shadow: var(--shadow-float);
 }
 
 .modal-title {
-    font-size: clamp(1.5rem, 3.5vh, 2.5rem);
+    font-size: clamp(1.5rem, 3.5dvh, 2.5rem);
     margin-bottom: 25px;
     font-weight: 800;
     color: var(--text-main);
@@ -405,7 +405,7 @@ body {
 
 .form-group label {
     display: block;
-    font-size: clamp(0.75rem, 1.5vh, 1rem);
+    font-size: clamp(0.75rem, 1.5dvh, 1rem);
     color: var(--text-muted);
     font-weight: 600;
     margin-bottom: 6px;
@@ -417,7 +417,7 @@ body {
 .form-group select {
     width: 100%;
     padding: 14px 18px;
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     background: var(--bg-base);
     color: var(--text-main);
     border: 1px solid var(--border-soft);
@@ -473,7 +473,7 @@ body {
 .time-inputs input {
     width: 80px;
     text-align: center;
-    font-size: clamp(1.2rem, 2.5vh, 2rem);
+    font-size: clamp(1.2rem, 2.5dvh, 2rem);
     font-weight: 700;
     background: var(--card-bg);
 }
@@ -488,7 +488,7 @@ body {
 .btn-secondary,
 .btn-danger,
 .btn-info {
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     font-weight: 600;
     padding: 18px;
     border-radius: 16px;
@@ -548,7 +548,7 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 15px;
     margin-bottom: 25px;
-    max-height: 50vh;
+    max-height: 50dvh;
     overflow-y: auto;
 }
 
@@ -564,7 +564,7 @@ body {
     color: var(--text-main);
     border: 1px solid var(--border-soft);
     padding: 20px 10px;
-    font-size: clamp(0.9rem, 2vh, 1.3rem);
+    font-size: clamp(0.9rem, 2dvh, 1.3rem);
     font-weight: 700;
     cursor: pointer;
     border-radius: 16px;
@@ -578,7 +578,7 @@ body {
 
 .btn-card {
     padding: 18px;
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     font-weight: 700;
     border-radius: 12px;
     border: 2px solid transparent;
@@ -596,7 +596,7 @@ body {
     border-color: var(--border-soft);
     color: var(--text-main);
     margin-bottom: 10px;
-    font-size: clamp(0.9rem, 2vh, 1.3rem);
+    font-size: clamp(0.9rem, 2dvh, 1.3rem);
 }
 
 .btn-card.y {
@@ -652,7 +652,7 @@ body {
     align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid var(--border-soft);
-    font-size: clamp(0.8rem, 1.8vh, 1.2rem);
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
     color: var(--text-main);
 }
 
@@ -664,7 +664,7 @@ body {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: clamp(1.1rem, 2.2vh, 1.5rem);
+    font-size: clamp(1.1rem, 2.2dvh, 1.5rem);
     cursor: pointer;
     padding: 5px 10px;
     transition: color 0.2s;
@@ -684,7 +684,7 @@ body {
     background: var(--text-main);
     color: var(--card-bg);
     padding: 25px 60px;
-    font-size: clamp(1.5rem, 3vh, 2.5rem);
+    font-size: clamp(1.5rem, 3dvh, 2.5rem);
     font-weight: 800;
     border-radius: 100px;
     box-shadow: var(--shadow-float);
@@ -696,7 +696,7 @@ body {
 }
 
 .timeout-clock {
-    font-size: clamp(5rem, 18vh, 15rem);
+    font-size: clamp(5rem, 18dvh, 15rem);
     color: var(--accent-yellow);
     font-weight: 800;
     margin: 20px 0;
@@ -720,7 +720,7 @@ body {
 }
 
 .time-separator {
-    font-size: 2.5vh;
+    font-size: 2.5dvh;
     font-weight: 700;
     color: var(--text-muted);
 }
@@ -734,7 +734,7 @@ body {
 .setup-section-title {
     margin-bottom: 15px;
     color: var(--text-main);
-    font-size: clamp(1rem, 1.8vh, 1.2rem);
+    font-size: clamp(1rem, 1.8dvh, 1.2rem);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -873,7 +873,7 @@ body {
 
     .player-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        max-height: 45vh;
+        max-height: 45dvh;
     }
 
     .foul-type-grid {
@@ -923,7 +923,7 @@ body {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: clamp(0.9rem, 5vh, 1.2rem);
+        font-size: clamp(0.9rem, 5dvh, 1.2rem);
         padding: 2px 10px;
         white-space: nowrap;
     }
@@ -938,7 +938,7 @@ body {
     }
 
     .timer {
-        font-size: clamp(2.5rem, 15vh, 4rem);
+        font-size: clamp(2.5rem, 15dvh, 4rem);
         line-height: 1;
     }
 
@@ -962,11 +962,11 @@ body {
     }
 
     .team-name {
-        font-size: clamp(1.2rem, 8vh, 2rem);
+        font-size: clamp(1.2rem, 8dvh, 2rem);
     }
 
     .score {
-        font-size: clamp(3rem, 25vh, 6rem);
+        font-size: clamp(3rem, 25dvh, 6rem);
         margin: 5px 0;
     }
 
@@ -983,7 +983,7 @@ body {
     }
 
     .foul-numbers {
-        font-size: clamp(1rem, 6vh, 1.5rem);
+        font-size: clamp(1rem, 6dvh, 1.5rem);
     }
 
     .foul-header {
@@ -1007,7 +1007,7 @@ body {
 
     .modal-content {
         padding: 15px 20px;
-        max-height: 95vh;
+        max-height: 95dvh;
     }
 
     .setup-grid {
@@ -1054,7 +1054,7 @@ body {
     }
 
     .player-grid {
-        max-height: 40vh;
+        max-height: 40dvh;
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 10px;
     }
@@ -1065,7 +1065,7 @@ body {
     }
 
     .timeout-clock {
-        font-size: clamp(3rem, 20vh, 6rem);
+        font-size: clamp(3rem, 20dvh, 6rem);
         margin: 10px 0;
     }
 }
