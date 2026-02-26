@@ -199,7 +199,15 @@
         updateFoulVisuals();
         updateTimerDisplay();
         updatePenaltiesUI();
+        updateTimeoutButton();
         renderMatchLog();
+    }
+
+    function updateTimeoutButton() {
+        const timeoutBtn = document.getElementById('btnOpenTimeout');
+        if (timeoutBtn) {
+            timeoutBtn.disabled = isRunning;
+        }
     }
 
     function updateTimerDisplay() {

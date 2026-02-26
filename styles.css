@@ -88,6 +88,14 @@ body {
     border-color: #fde68a;
 }
 
+.btn-timeout:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: #a8a29e;
+    background: #fafaf9;
+    border-color: #e7e5e4;
+}
+
 .btn-undo {
     color: var(--text-muted);
 }
