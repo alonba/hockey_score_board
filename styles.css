@@ -177,9 +177,10 @@ body {
     border-radius: 40px;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.8);
-    padding: 50px 30px 40px 30px;
+    padding: 40px 30px 30px 30px;
     box-shadow: var(--shadow-soft);
     transition: transform 0.2s ease;
+    overflow: hidden;
 }
 
 .team-header {
@@ -221,7 +222,7 @@ body {
     font-variant-numeric: tabular-nums;
     letter-spacing: -6px;
     color: var(--text-main);
-    margin: 20px 0;
+    margin: 10px 0;
 }
 
 /* --- PENALTY TIMERS --- */
@@ -232,7 +233,7 @@ body {
     justify-content: center;
     width: 100%;
     min-height: clamp(1.5rem, 4dvh, 2.5rem);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .penalty-pill {
@@ -267,7 +268,7 @@ body {
     width: 85%;
     background: var(--bg-base);
     border-radius: 20px;
-    padding: 20px 25px;
+    padding: 15px 20px;
     cursor: pointer;
     border: 1px solid var(--border-soft);
     transition: background 0.2s;
@@ -359,6 +360,51 @@ body {
     100% {
         opacity: 1;
     }
+}
+
+/* --- TIMEOUTS SECTION --- */
+.timeouts-section {
+    width: 85%;
+    background: var(--bg-base);
+    border-radius: 20px;
+    padding: 12px 20px;
+    border: 1px solid var(--border-soft);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.timeouts-label {
+    font-size: clamp(0.8rem, 1.8dvh, 1.2rem);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.timeouts-indicators {
+    display: flex;
+    gap: 10px;
+}
+
+.timeout-circle {
+    width: clamp(1.5rem, 3.5dvh, 2.5rem);
+    height: clamp(1.5rem, 3.5dvh, 2.5rem);
+    border-radius: 50%;
+    border: 2px solid var(--border-soft);
+    transition: all 0.3s ease;
+}
+
+.timeout-circle.active {
+    background-color: var(--accent-yellow);
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.timeout-circle.used {
+    background-color: transparent;
+    border-color: #cbd5e1;
 }
 
 /* --- MODALS & MENUS --- */
@@ -849,6 +895,11 @@ body {
         padding: 15px;
     }
 
+    .timeouts-section {
+        width: 100%;
+        padding: 12px 15px;
+    }
+
     .foul-numbers {
         font-size: 2.2rem;
     }
@@ -988,6 +1039,17 @@ body {
     .foul-section {
         padding: 5px 10px;
         width: 100%;
+    }
+
+    .timeouts-section {
+        padding: 5px 10px;
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    .timeout-circle {
+        width: 1.5rem;
+        height: 1.5rem;
     }
 
     .foul-numbers {

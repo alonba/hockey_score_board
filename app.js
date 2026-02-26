@@ -96,6 +96,7 @@
             B: { name: "AWAY", color: "#ef4444", players: ["1", "2", "3", "4", "5"], score: 0, fouls: 0, playerFouls: {} }
         },
         penalties: { A: [], B: [] }, // Tracks active blue/red card timers
+        timeouts: { A: 2, B: 2 }, // Each team has 2 timeouts per half
         timeLeft: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
         periodDuration: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
         currentPeriodIndex: 0,
@@ -135,6 +136,7 @@
                         B: { name: "AWAY", color: "#ef4444", players: ["1", "2", "3", "4", "5"], score: 0, fouls: 0, playerFouls: {} }
                     },
                     penalties: { A: [], B: [] },
+                    timeouts: { A: 2, B: 2 },
                     timeLeft: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
                     periodDuration: CONFIG.DEFAULT_PERIOD_MINUTES * 60,
                     currentPeriodIndex: 0,
@@ -152,6 +154,7 @@
                         B: { ...defaultState.matchData.B, ...(parsed.matchData?.B || {}) }
                     },
                     penalties: parsed.penalties || defaultState.penalties,
+                    timeouts: parsed.timeouts || defaultState.timeouts,
                     periodDuration: parsed.periodDuration || parsed.timeLeft || defaultState.periodDuration,
                     timeoutDuration: parsed.timeoutDuration || defaultState.timeoutDuration
                 };
@@ -199,6 +202,7 @@
         updateFoulVisuals();
         updateTimerDisplay();
         updatePenaltiesUI();
+        updateTimeoutsUI();
         updateTimeoutButton();
         renderMatchLog();
     }
@@ -278,6 +282,21 @@
 
                 container.appendChild(pill);
             });
+        });
+    }
+
+    function updateTimeoutsUI() {
+        ['A', 'B'].forEach(team => {
+            const container = document.getElementById('timeouts' + team);
+            container.innerHTML = '';
+            const timeoutsRemaining = state.timeouts[team] || 0;
+            
+            // Show 2 timeout circles, filled if available, empty if used
+            for (let i = 0; i < 2; i++) {
+                const circle = document.createElement('div');
+                circle.className = i < timeoutsRemaining ? 'timeout-circle active' : 'timeout-circle used';
+                container.appendChild(circle);
+            }
         });
     }
 
@@ -398,7 +417,23 @@
                 isRunning = false;
             }
         }
+        
+        const previousPeriod = state.currentPeriodIndex;
         state.currentPeriodIndex = (state.currentPeriodIndex + 1) % periods.length;
+        
+        // Reset timeouts at the start of second half (index 1)
+        if (state.currentPeriodIndex === 1) {
+            state.timeouts.A = 2;
+            state.timeouts.B = 2;
+            showAnnouncement("2nd Half", "Timeouts have been reset for both teams");
+        }
+        // No timeouts in OT periods (index 2 = OT 1, index 3 = OT 2)
+        else if (state.currentPeriodIndex === 2 || state.currentPeriodIndex === 3) {
+            state.timeouts.A = 0;
+            state.timeouts.B = 0;
+            showAnnouncement(periods[state.currentPeriodIndex], "No timeouts available in overtime");
+        }
+        
         saveState();
         refreshUI();
     }
@@ -658,6 +693,12 @@
                 state.penalties[team] = state.penalties[team].filter(p => p.id !== lastEvent.id);
             }
             showAnnouncement(`⟲ Undid ${state.matchData[team].name} ${lastEvent.infractionType}`);
+        } else if (lastEvent.type === 'timeout') {
+            // Restore the timeout for the team
+            if (state.timeouts[team] < 2) {
+                state.timeouts[team]++;
+                showAnnouncement(`⟲ Undid ${state.matchData[team].name} Timeout`);
+            }
         }
         saveState();
         refreshUI();
@@ -702,6 +743,10 @@
                 astSpan.style.fontSize = 'clamp(0.7rem, 1.5vh, 1rem)';
                 astSpan.textContent = `(Ast: ${ev.assist})`;
                 detailsSpan.appendChild(astSpan);
+            } else if (ev.type === 'timeout') {
+                const bText = document.createElement('b');
+                bText.textContent = `⏸ ${ev.teamName} Timeout`;
+                detailsSpan.appendChild(bText);
             } else {
                 let icon = ev.infractionType === CARD_YELLOW ? '🟨' : ev.infractionType === CARD_BLUE ? '🟦' : ev.infractionType === CARD_RED ? '🟥' : '🛑';
 
@@ -753,6 +798,11 @@
                 if (ev.infractionType === CARD_BLUE || ev.infractionType === CARD_RED) {
                     state.penalties[ev.team] = state.penalties[ev.team].filter(p => p.id !== id);
                 }
+            } else if (ev.type === 'timeout') {
+                // Restore the timeout for the team
+                if (state.timeouts[ev.team] < 2) {
+                    state.timeouts[ev.team]++;
+                }
             }
             state.events.splice(index, 1);
             saveState();
@@ -778,15 +828,85 @@
 
     function openTimeout() {
         initAudio();
+        
+        // Check if either team has timeouts available
+        if (state.timeouts.A === 0 && state.timeouts.B === 0) {
+            showAnnouncement("No Timeouts Available", "Both teams have used all their timeouts!");
+            return;
+        }
+        
         if (isRunning) {
             clearInterval(timerInterval);
             isRunning = false;
             saveState();
             refreshUI();
         }
+        
+        // Update team names on buttons
+        document.getElementById('btnTimeoutTeamA').textContent = state.matchData.A.name;
+        document.getElementById('btnTimeoutTeamB').textContent = state.matchData.B.name;
+        
+        // Update button states based on available timeouts
+        const btnTeamA = document.getElementById('btnTimeoutTeamA');
+        const btnTeamB = document.getElementById('btnTimeoutTeamB');
+        
+        if (state.timeouts.A === 0) {
+            btnTeamA.disabled = true;
+            btnTeamA.style.opacity = '0.4';
+            btnTeamA.textContent = state.matchData.A.name + ' (No Timeouts)';
+        } else {
+            btnTeamA.disabled = false;
+            btnTeamA.style.opacity = '1';
+            btnTeamA.textContent = state.matchData.A.name + ` (${state.timeouts.A} left)`;
+        }
+        
+        if (state.timeouts.B === 0) {
+            btnTeamB.disabled = true;
+            btnTeamB.style.opacity = '0.4';
+            btnTeamB.textContent = state.matchData.B.name + ' (No Timeouts)';
+        } else {
+            btnTeamB.disabled = false;
+            btnTeamB.style.opacity = '1';
+            btnTeamB.textContent = state.matchData.B.name + ` (${state.timeouts.B} left)`;
+        }
+        
+        // Show team selection, hide timer
+        document.getElementById('teamSelectionTimeout').style.display = 'flex';
+        document.getElementById('timeoutTimer').style.display = 'none';
+        document.getElementById('timeoutModal').style.display = 'flex';
+    }
+
+    function startTimeoutTimer(team) {
+        // Reduce timeout count for the team
+        if (state.timeouts[team] > 0) {
+            state.timeouts[team]--;
+            
+            // Log the timeout event
+            const now = Date.now();
+            const timeStr = updateTimerDisplay();
+            state.events.push({
+                id: now,
+                type: 'timeout',
+                team: team,
+                teamName: state.matchData[team].name,
+                time: timeStr,
+                period: periods[state.currentPeriodIndex],
+                timestamp: now
+            });
+            
+            saveState();
+            refreshUI();
+        }
+        
+        // Show announcement
+        showAnnouncement("Timeout", `${state.matchData[team].name} - ${state.timeouts[team]} timeout(s) remaining`);
+        
+        // Hide team selection, show timer
+        document.getElementById('teamSelectionTimeout').style.display = 'none';
+        document.getElementById('timeoutTimer').style.display = 'block';
+        
         timeoutLeft = state.timeoutDuration;
         document.getElementById('timeoutDisplay').textContent = timeoutLeft;
-        document.getElementById('timeoutModal').style.display = 'flex';
 
         if (timeoutInterval) clearInterval(timeoutInterval);
         timeoutInterval = setInterval(() => {
@@ -858,6 +978,8 @@
         document.getElementById('announcement').addEventListener('click', hideAnnouncement);
 
         document.getElementById('btnCloseTimeout').addEventListener('click', closeTimeout);
+        document.getElementById('btnTimeoutTeamA').addEventListener('click', () => startTimeoutTimer('A'));
+        document.getElementById('btnTimeoutTeamB').addEventListener('click', () => startTimeoutTimer('B'));
 
         document.getElementById('presetA').addEventListener('change', () => loadPreset('A'));
         document.getElementById('presetB').addEventListener('change', () => loadPreset('B'));
