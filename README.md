@@ -6,7 +6,7 @@ A web app for tracking and managing Rink Hockey matches. This app provides profe
 
 This app can be installed as a Progressive Web App (PWA) on both iPhone and Android devices, giving you a native app-like experience without going through an app store.
 
-1. Use your favorite browser and navigate to the scoreboard website - `https://alonba.github.io/hockey_score_board/`
+1. Use your favorite browser and navigate to the scoreboard [website](https://alonba.github.io/hockey_score_board/).
 
 2. On iPhones - Tap the **Share** button. On Android - Tap the **three-dot menu** (⋮) in the top right corner.
 
