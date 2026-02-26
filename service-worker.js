@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scoreboard-v2';
+const CACHE_NAME = 'scoreboard-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

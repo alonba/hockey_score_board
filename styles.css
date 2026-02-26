@@ -997,7 +997,7 @@ body {
         max-width: 100%;
         padding: 12px 6px !important;
         border-radius: 16px;
-        flex: 0 0 auto !important;
+        flex: 1 !important;
         justify-content: flex-start !important;
         gap: 6px !important;
         min-height: 0 !important;
@@ -1024,14 +1024,16 @@ body {
     }
 
     .score {
-        font-size: clamp(3.5rem, 18vw, 7rem);
+        font-size: clamp(5rem, 18dvh, 14rem);
         margin: 4px 0 !important;
         letter-spacing: 0;
+        line-height: 1 !important;
         padding: 0;
-        flex: 1;
+        flex: 2;
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: clamp(5rem, 18dvh, 14rem);
     }
 
     .team-color-line {
@@ -1234,13 +1236,15 @@ body {
     }
 
     .score {
-        font-size: clamp(2.5rem, 20dvh, 5rem);
+        font-size: clamp(3rem, 30dvh, 10rem);
         margin: 2px 0 !important;
         letter-spacing: 0;
-        flex: 1;
+        line-height: 1 !important;
+        flex: 2;
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: clamp(3rem, 30dvh, 10rem);
     }
 
     .team-color-line {
