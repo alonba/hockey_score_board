@@ -1208,7 +1208,7 @@ body {
     .team-card {
         flex: 1;
         max-width: 50%;
-        padding: 4px 3px !important;
+        padding: 8px 3px 4px 3px !important;
         min-height: 0 !important;
         max-height: none !important;
         height: auto !important;
