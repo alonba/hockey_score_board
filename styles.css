@@ -21,17 +21,30 @@
     padding: 0;
 }
 
+html {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+}
+
 body {
     background-color: var(--bg-base);
     color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
     height: 100dvh;
+    width: 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    position: relative;
+    margin: 0;
+    padding: 0;
 }
 
 /* --- TOP CONTROL BAR --- */
@@ -40,7 +53,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 30px 50px;
+    padding: clamp(15px, 2dvh, 30px) clamp(20px, 4vw, 50px);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -128,15 +141,16 @@ body {
 /* --- TIMER --- */
 .timer-container {
     position: absolute;
-    top: 10%;
+    top: clamp(60px, 8dvh, 100px);
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
     z-index: 5;
+    max-width: 90%;
 }
 
 .timer {
-    font-size: clamp(4rem, 15dvh, 12rem);
+    font-size: clamp(3rem, 12dvh, 10rem);
     font-weight: 800;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
@@ -162,9 +176,10 @@ body {
     display: flex;
     flex: 1;
     width: 100%;
-    margin-top: 25dvh;
-    padding: 0 50px 50px 50px;
-    gap: 50px;
+    margin-top: clamp(180px, 25dvh, 300px);
+    padding: 0 clamp(20px, 4vw, 50px) clamp(20px, 3dvh, 40px) clamp(20px, 4vw, 50px);
+    gap: clamp(20px, 4vw, 50px);
+    align-items: flex-start;
 }
 
 .team-card {
@@ -174,13 +189,14 @@ body {
     align-items: center;
     justify-content: space-between;
     background: var(--card-bg);
-    border-radius: 40px;
+    border-radius: clamp(20px, 3vw, 40px);
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.8);
-    padding: 40px 30px 30px 30px;
+    padding: clamp(20px, 3dvh, 40px) clamp(15px, 2vw, 30px) clamp(15px, 2dvh, 30px) clamp(15px, 2vw, 30px);
     box-shadow: var(--shadow-soft);
     transition: transform 0.2s ease;
     overflow: hidden;
+    max-height: 100%;
 }
 
 .team-header {
@@ -763,6 +779,7 @@ body {
 .toolbar-actions {
     display: flex;
     gap: 15px;
+    flex-shrink: 0;
 }
 
 .timeout-title {
@@ -818,86 +835,236 @@ body {
     display: none !important;
 }
 
+/* --- GENERAL SMALL SCREEN LAYOUT (PORTRAIT ONLY) --- */
+@media (max-width: 900px) and (orientation: portrait) {
+    .scoreboard {
+        flex-direction: column !important;
+    }
+    
+    .team-card {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* --- TABLET & SMALL LAPTOP RESPONSIVE --- */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .timer {
+        font-size: clamp(2.5rem, 10dvh, 8rem);
+    }
+    
+    .scoreboard {
+        margin-top: clamp(150px, 22dvh, 250px);
+        padding: 0 clamp(15px, 3vw, 30px) clamp(15px, 2dvh, 30px) clamp(15px, 3vw, 30px);
+        gap: clamp(15px, 3vw, 30px);
+    }
+    
+    .team-card {
+        padding: clamp(15px, 2.5dvh, 30px) clamp(12px, 1.5vw, 25px);
+    }
+    
+    .score {
+        font-size: clamp(6rem, 25dvh, 16rem);
+    }
+}
+
+/* --- SMALL HEIGHT SCREENS (laptops with small vertical space) --- */
+@media (max-height: 700px) and (min-width: 769px) {
+    .timer-container {
+        top: clamp(40px, 6dvh, 60px);
+    }
+    
+    .timer {
+        font-size: clamp(2rem, 10dvh, 6rem);
+    }
+    
+    .scoreboard {
+        margin-top: clamp(120px, 18dvh, 180px);
+        padding: 0 clamp(15px, 3vw, 40px) 15px clamp(15px, 3vw, 40px);
+    }
+    
+    .team-card {
+        padding: 15px 20px;
+        border-radius: 25px;
+    }
+    
+    .score {
+        font-size: clamp(5rem, 20dvh, 12rem);
+        margin: 5px 0;
+    }
+    
+    .team-name {
+        font-size: clamp(1.5rem, 4dvh, 3rem);
+    }
+    
+    .foul-section,
+    .timeouts-section {
+        padding: 10px 15px;
+    }
+}
+
 /* --- MOBILE & RESPONSIVE TWEAKS --- */
 @media (max-width: 768px) and (orientation: portrait) {
 
     /* Allow scrolling explicitly for modals and logs in case body swallows it */
+    html,
     body {
         touch-action: pan-y;
+        overflow-x: hidden !important;
+        max-width: 100%;
+        width: 100%;
+        position: relative;
+    }
+
+    * {
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .top-bar {
         position: relative;
-        padding: 15px;
-        min-height: 70px;
+        padding: 10px 5px;
+        min-height: 55px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .toolbar-actions {
+        gap: 6px;
     }
 
     .period-display {
-        font-size: clamp(0.9rem, 4vw, 1.2rem);
+        font-size: clamp(0.65rem, 2.8vw, 0.95rem);
+        padding: 4px 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 35%;
+        letter-spacing: 0.5px;
     }
 
     .top-bar .icon-btn {
-        width: 44px;
-        height: 44px;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        padding: 0;
+        flex-shrink: 0;
     }
 
     .top-bar .icon-btn svg {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
     }
 
     .timer-container {
         position: relative;
         top: 0;
-        transform: none;
         left: 0;
-        margin-top: 5px;
+        transform: none;
+        margin: 3px auto 8px auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        box-sizing: border-box;
+        text-align: center;
     }
 
     .timer {
-        font-size: 22vw;
+        font-size: clamp(2.5rem, 15vw, 5rem);
+        letter-spacing: 0;
+        max-width: 100%;
+        display: inline-block;
     }
 
     .scoreboard {
+        display: flex;
         flex-direction: column;
-        margin-top: 0;
-        padding: 5px 15px 25px 15px;
-        gap: 15px;
-        flex: auto;
+        margin: 0;
+        padding: 0 5px 12px 5px;
+        gap: 8px;
+        flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         touch-action: pan-y;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .team-card {
-        padding: 20px 15px;
-        border-radius: 20px;
-        flex: 1;
-        justify-content: space-evenly;
-        min-height: 300px;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 6px !important;
+        border-radius: 16px;
+        flex: 0 0 auto !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible;
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    .team-header {
+        gap: 8px;
+        margin-bottom: 0;
     }
 
     .team-name {
-        font-size: 8vw;
+        font-size: clamp(1.4rem, 6.5vw, 2.8rem);
+        word-break: break-word;
+        hyphens: auto;
+        letter-spacing: 0;
+        padding: 0 5px;
+        margin: 0;
+        height: auto !important;
     }
 
     .score {
-        font-size: 26vw;
-        margin: 5px 0;
+        font-size: clamp(3.5rem, 18vw, 7rem);
+        margin: 4px 0 !important;
+        letter-spacing: 0;
+        padding: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .team-color-line {
-        width: 60px;
-        height: 6px;
+        width: 80px;
+        height: 8px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    .penalties-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 4px 0 !important;
+        box-sizing: border-box;
     }
 
     .foul-section {
         width: 100%;
-        padding: 15px;
+        max-width: 100%;
+        padding: 10px 8px;
+        box-sizing: border-box;
+        margin: 4px 0 !important;
     }
 
     .timeouts-section {
         width: 100%;
-        padding: 12px 15px;
+        max-width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+        margin: 4px 0 0 0 !important;
     }
 
     .foul-numbers {
@@ -961,20 +1128,34 @@ body {
 
 /* --- SMALL HORIZONTAL SCREEN (LANDSCAPE TWEAKS) --- */
 @media (max-height: 600px) and (orientation: landscape) {
+    html,
+    body {
+        overflow-x: hidden !important;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
     .top-bar {
         position: relative;
-        padding: 5px 15px;
-        min-height: 50px;
+        padding: 3px 8px;
+        min-height: 40px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .top-bar .icon-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
     }
 
     .top-bar .icon-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
     }
 
     .period-display {
@@ -982,9 +1163,12 @@ body {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: clamp(0.9rem, 5dvh, 1.2rem);
-        padding: 2px 10px;
+        font-size: clamp(0.7rem, 4dvh, 1rem);
+        padding: 2px 6px;
         white-space: nowrap;
+        max-width: 30%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .timer-container {
@@ -992,87 +1176,135 @@ body {
         top: 0;
         left: 0;
         transform: none;
-        margin-top: 5px;
-        margin-bottom: 5px;
+        margin: 2px auto 3px auto;
+        width: 100%;
+        max-width: 100%;
+        text-align: center;
+        padding: 0;
     }
 
     .timer {
-        font-size: clamp(2.5rem, 15dvh, 4rem);
+        font-size: clamp(1.8rem, 10dvh, 3.5rem);
         line-height: 1;
+        letter-spacing: 0;
+        max-width: 100%;
+        display: inline-block;
     }
 
     .scoreboard {
-        margin-top: 0;
-        padding: 0 15px 10px 15px;
-        gap: 15px;
+        display: flex;
+        flex-direction: row;
+        margin: 0;
+        padding: 0 3px 5px 3px;
+        gap: 5px;
         flex: 1;
-        overflow-y: auto;
+        overflow-y: hidden;
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
+        align-items: stretch;
     }
 
     .team-card {
-        padding: 10px 15px;
-        min-height: auto;
-        justify-content: flex-start;
+        flex: 1;
+        max-width: 50%;
+        padding: 4px 3px !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        height: auto !important;
+        justify-content: flex-start !important;
+        box-sizing: border-box;
+        overflow: visible;
+        gap: 3px !important;
     }
 
     .team-header {
-        flex-direction: row;
-        gap: 10px;
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+        margin: 0;
     }
 
     .team-name {
-        font-size: clamp(1.2rem, 8dvh, 2rem);
+        font-size: clamp(0.9rem, 6dvh, 1.6rem);
+        letter-spacing: 0;
+        line-height: 1.1;
+        margin: 0;
+        height: auto !important;
     }
 
     .score {
-        font-size: clamp(3rem, 25dvh, 6rem);
-        margin: 5px 0;
+        font-size: clamp(2.5rem, 20dvh, 5rem);
+        margin: 2px 0 !important;
+        letter-spacing: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .team-color-line {
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        box-shadow: none;
-    }
-
-    .foul-section {
-        padding: 5px 10px;
-        width: 100%;
-    }
-
-    .timeouts-section {
-        padding: 5px 10px;
-        width: 100%;
-        margin-top: 5px;
-    }
-
-    .timeout-circle {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
-
-    .foul-numbers {
-        font-size: clamp(1rem, 6dvh, 1.5rem);
-    }
-
-    .foul-header {
-        margin-bottom: 5px;
-    }
-
-    .foul-title,
-    .foul-threshold {
-        font-size: 0.8rem;
+        width: 80px;
+        height: 8px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+        margin: 0;
     }
 
     .penalties-container {
-        margin-bottom: 5px;
-        min-height: 20px;
+        margin: 2px 0 !important;
+        min-height: 18px;
+        gap: 5px;
+    }
+
+    .foul-section {
+        padding: 3px 5px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 2px 0 !important;
+    }
+
+    .timeouts-section {
+        padding: 3px 5px;
+        width: 100%;
+        max-width: 100%;
+        margin: 2px 0 0 0 !important;
+        box-sizing: border-box;
+    }
+        box-sizing: border-box;
+    }
+
+    .timeout-circle {
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+
+    .foul-numbers {
+        font-size: clamp(0.9rem, 5dvh, 1.3rem);
+    }
+
+    .foul-header {
+        margin-bottom: 3px;
+    }
+
+    .foul-title,
+    .foul-threshold,
+    .timeouts-label {
+        font-size: clamp(0.6rem, 2.5dvh, 0.75rem);
+    }
+
+    .penalties-container {
+        margin-bottom: 3px;
+        min-height: 18px;
+        gap: 5px;
     }
 
     .penalty-pill {
-        padding: 3px 8px;
-        font-size: 0.8rem;
+        padding: 2px 6px;
+        font-size: clamp(0.65rem, 3dvh, 0.8rem);
+        gap: 4px;
     }
 
     .modal-content {
