@@ -150,7 +150,7 @@ body {
 }
 
 .timer {
-    font-size: clamp(3rem, 12dvh, 10rem);
+    font-size: clamp(5rem, 16dvh, 14rem);
     font-weight: 800;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
@@ -1186,7 +1186,7 @@ body {
     }
 
     .timer {
-        font-size: clamp(1.8rem, 10dvh, 3.5rem);
+        font-size: clamp(3rem, 14dvh, 6rem);
         line-height: 1;
         letter-spacing: 0;
         max-width: 100%;
