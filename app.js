@@ -835,6 +835,13 @@
 
     // --- DOM READY BINDING ---
     window.addEventListener('DOMContentLoaded', function () {
+        // Lock screen orientation to landscape on mobile devices
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(err => {
+                console.log('Orientation lock not supported or failed:', err);
+            });
+        }
+        
         // Setup options
         const selectA = document.getElementById('presetA');
         const selectB = document.getElementById('presetB');
